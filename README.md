@@ -12,7 +12,9 @@ This project demonstrates how to write external graders for [CrowdAI](https://gi
 
 ```bash
 cp config.example.py config.py
-vim config.py # set your own api url
+cp grader_list.example.py grader_list.py
+vim config.py # set your own s3 credentials
+vim grader_list.py # set your own grader api url
 flask run
 ```
 
@@ -22,6 +24,6 @@ Edit your chanllenge in CrowdAI, set `Grader Identifier` to the grader that you 
 
 ## Customization
 
-To write your own grader, just create a file in `graders` which inherits `CommonGrader` class and overwrite the `grade` method to update the scores, and then register it in `config.py`. Note that orgnizer token should be used in grader, according to CrowdAI documentation.
+To write your own grader, just create a file in `graders` which inherits `CommonGrader` class and overwrite the `grade` method to update the scores, and then register it in `grader_list.py`. Note that organizer token should be used in grader, according to CrowdAI documentation.
 
 One example named `RandomPointsGrader` is provided as reference.

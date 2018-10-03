@@ -1,6 +1,7 @@
 from abc import abstractmethod
 from flask import Flask
 import config
+import grader_list
 import requests
 import boto3
 
@@ -29,7 +30,7 @@ class CommonGrader(object):
 
     def fetch_submission(self):
         try:
-            self.submission_content = s3.Object(Bucket=config.AWS_S3_BUCKET_NAME, Key=self.file_key).get()['Body']\
+            self.submission_content = s3.Object(config.AWS_S3_BUCKET_NAME, self.file_key).get()['Body']\
                 .read().decode('utf-8')
         except Exception as e:
             self.grading_message = 'Error fetching submission'
@@ -40,7 +41,7 @@ class CommonGrader(object):
         pass
 
     def submit(self):
-        url = config.CROWDAI_API_EXTERNAL_GRADER_URL + '/' + self.submission_id
+        url = grader_list.CROWDAI_API_EXTERNAL_GRADER_URL + '/' + self.submission_id
 
         if self.grading_success:
             self.app.logger.debug('Submitting to {} with score {} and secondary score {}'
