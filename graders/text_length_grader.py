@@ -2,10 +2,10 @@ import random
 from graders.common_grader import CommonGrader
 
 
-class RandomPointsGrader(CommonGrader):
+class TextLengthGrader(CommonGrader):
 
     def __init__(self, *args):
-        super(RandomPointsGrader, self).__init__(*args)
+        super(TextLengthGrader, self).__init__(*args)
 
     def grade(self):
         if self.submission_content is not None:
