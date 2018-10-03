@@ -9,3 +9,7 @@ CROWDAI_API_GRADERS = [
         'class': RandomPointsGrader
     }
 ]
+
+AWS_ACCESS_KEY_ID = 'REDACTED'
+AWS_SECRET_ACCESS_KEY = 'REDACTED'
+AWS_REGION = 'REDACTED'

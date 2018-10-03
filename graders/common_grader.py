@@ -10,13 +10,14 @@ class CommonGrader(object):
     score: float = None
     score_secondary: float = None
 
-    def __init__(self, api_key, file_key, submission_id, app):
+    def __init__(self, api_key, file_key, submission_id, app, submission_content):
         self.app = app
-        self.app.logger.debug('Initializing new {} with api_key {}, file_key {}, submission_id {}'
-                              .format(__name__, api_key, file_key, submission_id))
+        self.app.logger.debug('Initializing new {} with api_key {}, file_key {}, submission_id {}, submission_content {}'
+                              .format(__name__, api_key, file_key, submission_id, submission_content))
         self.api_key = api_key
         self.file_key = file_key
         self.submission_id = submission_id
+        self.submission_content = submission_content
 
         # TODO get file from S3
 
