@@ -16,5 +16,3 @@ class TextLengthGrader(CommonGrader):
                 self.grading_success = True
             else:
                 self.grading_message = 'Submission with {} bytes is too long!'.format(length)
-        else:
-            self.grading_message = 'Empty submission'

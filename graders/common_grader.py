@@ -59,7 +59,7 @@ class CommonGrader(object):
                 data['score_secondary'] = '{:.3f}'.format(self.score_secondary)
 
         else:
-            self.app.logger.debug('Submitting to {} with failure message {}'
+            self.app.logger.debug('Submitting to {} with failure message: {}'
                                   .format(url, self.grading_message))
             data = {
                 'grading_status': 'failed',
