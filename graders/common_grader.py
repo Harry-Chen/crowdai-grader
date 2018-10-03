@@ -1,4 +1,6 @@
 from abc import abstractmethod
+
+from botocore.config import Config
 from flask import Flask
 import config
 import grader_list
@@ -6,6 +8,7 @@ import requests
 import boto3
 
 s3 = boto3.resource('s3',
+                    config=Config(connect_timeout=5, retries={'max_attempts': 0}),
                     aws_access_key_id=config.AWS_ACCESS_KEY_ID,
                     aws_secret_access_key=config.AWS_SECRET_ACCESS_KEY,
                     region_name=config.AWS_REGION)
