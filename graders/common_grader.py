@@ -4,14 +4,13 @@ import config
 import requests
 import boto3
 
-s3 = boto3.resource('s3',
-                    aws_access_key_id=config.AWS_ACCESS_KEY_ID,
-                    aws_secret_access_key=config.AWS_SECRET_ACCESS_KEY,
-                    region_name=config.AWS_REGION)
-
 
 class CommonGrader(object):
 
+    s3 = boto3.resource('s3',
+                        aws_access_key_id=config.AWS_ACCESS_KEY_ID,
+                        aws_secret_access_key=config.AWS_SECRET_ACCESS_KEY,
+                        region_name=config.AWS_REGION)
     app: Flask = None
     score: float = None
     score_secondary: float = None
@@ -29,7 +28,7 @@ class CommonGrader(object):
 
     def fetch_submission(self):
         try:
-            self.submission_content = s3.Object(Bucket=config.AWS_S3_BUCKET_NAME, Key=self.file_key).get()['Body']\
+            self.submission_content = self.s3.Object(Bucket=config.AWS_S3_BUCKET_NAME, Key=self.file_key).get()['Body']\
                 .read().decode('utf-8')
         except Exception as e:
             self.grading_message = 'Error fetching submission'
