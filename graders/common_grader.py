@@ -32,6 +32,7 @@ class CommonGrader(object):
         try:
             self.submission_content = s3.Object(config.AWS_S3_BUCKET_NAME, self.file_key).get()['Body']\
                 .read().decode('utf-8')
+            self.app.logger.debug('Read submission content of length {}'.format(len(self.submission_content)))
         except Exception as e:
             self.grading_message = 'Error fetching submission'
             self.app.logger.error('Error occurred when fetching submission: {}'.format(str(e)))
