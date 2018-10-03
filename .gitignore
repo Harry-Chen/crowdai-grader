@@ -96,3 +96,4 @@ pip-selfcheck.json
 venv/
 __pycache__
 config.py
+grader_list.py
