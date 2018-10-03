@@ -1,7 +1,6 @@
 import urllib
 
 from flask import Flask, request, make_response
-from graders.common_grader import CommonGrader
 from config import *
 from grader_list import *
 import _thread
@@ -30,7 +29,7 @@ def enqueue_grading_job() -> str:
         return make_response('Task successfully submitted', 200)
 
 
-def do_grade(grader: CommonGrader):
+def do_grade(grader):
     grader.fetch_submission()
     grader.grade()
     grader.submit()
