@@ -38,8 +38,9 @@ class CommonGrader(object):
                 .decode('utf-8')
             self.app.logger.debug('Read submission content of length {}'.format(len(self.submission_content)))
         except Exception as e:
-            self.grading_message = 'Error fetching submission'
-            self.app.logger.error('Error occurred when fetching submission: {}'.format(str(e)))
+            error_message = 'Error occurred when fetching submission: {}'.format(str(e))
+            self.grading_message = error_message
+            self.app.logger.error(error_message)
 
     @abstractmethod
     def grade(self):
