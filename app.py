@@ -2,8 +2,8 @@ import urllib
 
 from flask import Flask, request, make_response
 from config import *
-from grader_list import *
 from graders.common_grader import CommonGrader
+from grader_list import *
 import _thread
 
 app = Flask(__name__)
