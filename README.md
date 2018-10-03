@@ -22,6 +22,6 @@ Edit your chanllenge in CrowdAI, set `Grader Identifier` to the grader that you 
 
 ## Customization
 
-To write your own grader, just create a file in `graders` which inherits `CommonGrader` class and overwrite the `grade` method to update the scores, and then register it in `config.py`.
+To write your own grader, just create a file in `graders` which inherits `CommonGrader` class and overwrite the `grade` method to update the scores, and then register it in `config.py`. Note that orgnizer token should be used in grader, according to CrowdAI documentation.
 
 One example named `RandomPointsGrader` is provided as reference.
