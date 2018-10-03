@@ -30,8 +30,8 @@ class CommonGrader(object):
                               .format(url, self.score, self.score_secondary))
         response = requests.put(url, data={
             'grading_status': 'graded',
-            'score': self.score,
-            'score_secondary': self.score_secondary
+            'score': '{:.3f}'.format(self.score),
+            'score_secondary': '{:.3f}'.format(self.score_secondary),
         }, headers={
             'Authorization': 'Token token={}'.format(self.api_key)
         })
