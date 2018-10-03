@@ -8,5 +8,6 @@ class RandomPointsGrader(CommonGrader):
         super(RandomPointsGrader, self).__init__(*args)
 
     def grade(self):
-        self.score = len(self.submission_content)
+        self.score = random.uniform(0.0, 100.0)
         self.score_secondary = random.uniform(0.0, 100.0)
+        self.grading_success = True
