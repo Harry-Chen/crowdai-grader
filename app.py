@@ -1,4 +1,9 @@
-from flask import Flask, request
+import urllib
+
+from flask import Flask, request, make_response
+from config import *
+from graders.common_grader import CommonGrader
+import _thread
 
 app = Flask(__name__)
 
@@ -10,8 +15,26 @@ def hello_world():
 
 @app.route('/enqueue_grading_job', methods=['POST'])
 def enqueue_grading_job() -> str:
-    app.logger.info('Getting request' + request.form)
-    return "Queued"
+    r = request.form
+    app.logger.info('Getting request' + str(request.form))
+    submission_id = urllib.parse.unquote(r['data[][submission_id]'])
+    grader_id = urllib.parse.unquote(r['grader_id'])
+    file_key = urllib.parse.unquote(r['data[][file_key]'])
+
+    grader_result = list(filter(lambda g: g['id'] == grader_id, CROWDAI_API_GRADERS))
+
+    if len(grader_result) == 0:
+        return make_response('No grader found', 400)
+    else:
+        g = grader_result[0]
+        grader = g['class'](g['api_key'], file_key, submission_id, app)
+        _thread.start_new_thread(grade_background, (grader,))
+        return "Queued"
+
+
+def grade_background(grader: CommonGrader):
+    grader.grade()
+    grader.submit()
 
 
 if __name__ == '__main__':
