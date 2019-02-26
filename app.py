@@ -36,4 +36,4 @@ def do_grade(grader):
 
 
 if __name__ == '__main__':
-    app.run()
+    app.run(port=10000)

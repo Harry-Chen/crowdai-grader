@@ -8,10 +8,11 @@ import requests
 import boto3
 
 s3 = boto3.resource('s3',
-                    config=Config(connect_timeout=5, retries={'max_attempts': 0}),
+                    config=Config(connect_timeout=5, retries={'max_attempts': 5}, signature_version='s3v4'),
                     aws_access_key_id=config.AWS_ACCESS_KEY_ID,
                     aws_secret_access_key=config.AWS_SECRET_ACCESS_KEY,
-                    region_name=config.AWS_REGION)
+                    #region_name=config.AWS_REGION,
+                    endpoint_url=config.AWS_ENDPOINT)
 
 
 class CommonGrader(object):
@@ -19,7 +20,7 @@ class CommonGrader(object):
     app: Flask = None
     score: float = None
     score_secondary: float = None
-    submission_content: str = None
+    submission_content: bytes = None
     grading_message: str = None
     grading_success: bool = False
 
@@ -34,8 +35,7 @@ class CommonGrader(object):
     def fetch_submission(self):
         try:
             self.app.logger.debug('Fetching file {} from S3'.format(self.file_key))
-            self.submission_content = s3.Object(config.AWS_S3_BUCKET_NAME, self.file_key).get()['Body'].read()\
-                .decode('utf-8')
+            self.submission_content = s3.Object(config.AWS_S3_BUCKET_NAME, self.file_key).get()['Body'].read()
             self.app.logger.debug('Read submission content of length {}'.format(len(self.submission_content)))
         except Exception as e:
             error_message = 'Error occurred when fetching submission: {}'.format(str(e))
