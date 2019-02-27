@@ -7,7 +7,7 @@ import h5py
 import scipy.stats
 import pandas as pd
 
-f_ans = h5py.File("../static/ans.h5", "r")
+f_ans = h5py.File("static/ans.h5", "r")
 e_ans = f_ans["GroundTruth/PETime"][:]
 i_ans = f_ans["GroundTruth/EventID"][:]
 c_ans = f_ans["GroundTruth/ChannelID"][:]
