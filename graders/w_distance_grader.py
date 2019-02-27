@@ -1,6 +1,7 @@
 import random
 from graders.common_grader import CommonGrader
 
+import traceback
 import io
 import numpy as np
 import h5py
@@ -19,8 +20,15 @@ class WDistanceGrader(CommonGrader):
     def __init__(self, *args):
         super(WDistanceGrader, self).__init__(*args)
 
+    def generate_success_message(self):
+        if self.score == 0:
+            return 'Well done!'
+        else:
+            return 'Try harder!'
+
     def grade(self):
         if self.submission_content is not None:
+            self.app.logger.info('Starting to grade {}'.format(self.submission_id))
             try:
                 b = io.BytesIO(self.submission_content)
                 f_sub = h5py.File(b)
@@ -39,9 +47,11 @@ class WDistanceGrader(CommonGrader):
                     dist = scipy.stats.wasserstein_distance(d_ans[key], d_sub[key])
                     dists.append(dist)
                 self.score = np.mean(dists)
+                self.app.logger.info('Successfully graded {}'.format(self.submission_id))
                 self.grading_success = True
             except Exception as e:
-                import traceback
                 traceback.print_exc()
+                self.app.logger.error('Error grading {} with error: \n {}'.format(self.submission_id, repr(e)))
                 self.grading_message = 'Bad submission'
                 self.grading_success = False
+

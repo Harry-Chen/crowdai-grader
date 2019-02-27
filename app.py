@@ -1,12 +1,22 @@
 import urllib
 
-from flask import Flask, request, make_response
+from flask import Flask, request, jsonify
 from config import *
 from grader_list import *
 import _thread
 
-app = Flask(__name__)
+import logging
+from logging.handlers import RotatingFileHandler
+import sys
 
+app = Flask(__name__)
+handler = logging.StreamHandler(sys.stderr)
+handler.setLevel(logging.INFO)
+app.logger.addHandler(handler)
+handler = RotatingFileHandler('/var/log/crowdai/crowdai-grader.log', maxBytes=10000, backupCount=10)
+handler.setLevel(logging.INFO)
+app.logger.addHandler(handler)
+app.logger.setLevel(logging.INFO)
 
 @app.route('/enqueue_grading_job', methods=['POST'])
 def enqueue_grading_job() -> str:
@@ -21,19 +31,20 @@ def enqueue_grading_job() -> str:
 
     if len(grader_result) == 0:
         app.logger.warning('No grader found, will return error')
-        return make_response('No grader found', 400)
+        return jsonify({'message': 'No grader found'}), 400
     else:
         g = grader_result[0]
         grader = g['class'](g['api_key'], file_key, submission_id, app)
         _thread.start_new_thread(do_grade, (grader,))
-        return make_response('Task successfully submitted', 200)
+        return jsonify({'message': 'Task successfully submitted'}), 200
 
 
 def do_grade(grader):
     grader.fetch_submission()
     grader.grade()
-    grader.submit()
+    grader.submit_grade()
 
 
 if __name__ == '__main__':
     app.run(port=10000)
+
