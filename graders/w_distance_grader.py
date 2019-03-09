@@ -9,9 +9,9 @@ import scipy.stats
 import pandas as pd
 
 f_ans = h5py.File("static/ans.h5", "r")
-e_ans = f_ans["GroundTruth/PETime"][:]
-i_ans = f_ans["GroundTruth/EventID"][:]
-c_ans = f_ans["GroundTruth/ChannelID"][:]
+e_ans = f_ans["GroundTruth"]["PETime"][:]
+i_ans = f_ans["GroundTruth"]["EventID"][:]
+c_ans = f_ans["GroundTruth"]["ChannelID"][:]
 df_ans = pd.DataFrame({'PETime': e_ans, 'EventID': i_ans, 'ChannelID': c_ans})
 d_ans = df_ans.groupby(['EventID', 'ChannelID']).groups
 
@@ -51,7 +51,8 @@ class WDistanceGrader(CommonGrader):
                 e_sub = f_sub["Answer"]["PETime"]
                 i_sub = f_sub["Answer"]["EventID"]
                 c_sub = f_sub["Answer"]["ChannelID"]
-                df_sub = pd.DataFrame({'PETime': e_sub, 'EventID': i_sub, 'ChannelID': c_sub})
+                w_sub = f_sub["Answer"]["Weight"]
+                df_sub = pd.DataFrame({'PETime': e_sub, 'Weight': w_sub, 'EventID': i_sub, 'ChannelID': c_sub})
                 d_sub = df_sub.groupby(['EventID', 'ChannelID']).groups
 
                 dists = []
@@ -61,7 +62,7 @@ class WDistanceGrader(CommonGrader):
                         self.grading_message = 'Submission fail to include answer for event {} channel {}'.format(event_id, channel_id)
                         self.grading_success = False
                         return
-                    dist = scipy.stats.wasserstein_distance(d_ans[key], d_sub[key])
+                    dist = scipy.stats.wasserstein_distance(d_ans[key], d_sub[key]['PETime'], v_weights=d_sub[key]['Weight'])
                     dists.append(dist)
                 self.score = np.mean(dists)
                 self.app.logger.info('Successfully graded {}'.format(self.submission_id))
