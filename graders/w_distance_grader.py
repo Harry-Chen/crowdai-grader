@@ -33,19 +33,23 @@ class WDistanceGrader(CommonGrader):
                 b = io.BytesIO(self.submission_content)
                 f_sub = h5py.File(b)
                 if not "Answer" in f_sub:
-                    self.grading_message = 'Bad submission: no Answer found'
+                    self.grading_message = 'Bad submission: no Answer table found'
                     self.grading_success = False
                     return
                 if not "PETime" in f_sub["Answer"].dtype.fields:
-                    self.grading_message = 'Bad submission: no PETime found in Answer table'
+                    self.grading_message = 'Bad submission: column PETime not found in Answer table'
                     self.grading_success = False
                     return
                 if not "EventID" in f_sub["Answer"].dtype.fields:
-                    self.grading_message = 'Bad submission: no EventID found in Answer table'
+                    self.grading_message = 'Bad submission: column EventID not found in Answer table'
                     self.grading_success = False
                     return
                 if not "ChannelID" in f_sub["Answer"].dtype.fields:
-                    self.grading_message = 'Bad submission: no ChannelID found in Answer table'
+                    self.grading_message = 'Bad submission: column ChannelID not found in Answer table'
+                    self.grading_success = False
+                    return
+                if not "Weight" in f_sub["Answer"].dtype.fields:
+                    self.grading_message = 'Bad submission: column Weight not found in Answer table'
                     self.grading_success = False
                     return
                 e_sub = f_sub["Answer"]["PETime"]
