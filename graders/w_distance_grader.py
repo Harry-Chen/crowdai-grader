@@ -73,12 +73,12 @@ class WDistanceGrader(CommonGrader):
                         self.grading_message = 'Submission fail to include answer for event {} channel {}'.format(event_id, channel_id)
                         self.grading_success = False
                         return
-                    dist = scipy.stats.wasserstein_distance(d_ans[key], d_sub[key]['PETime'], v_weights=d_sub[key]['Weight'])
+                    dist = scipy.stats.wasserstein_distance(df_ans['PETime'][d_ans[key]], df_sub['PETime'][d_sub[key]], v_weights=df_sub['Weight'][d_sub[key]])
                     dists.append(dist)
                 self.score = np.mean(dists)
                 self.app.logger.info('Successfully graded {}'.format(self.submission_id))
                 self.grading_success = True
-            
+
             # oooooooops!
             except Exception as e:
                 traceback.print_exc()
