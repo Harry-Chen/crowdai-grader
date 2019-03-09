@@ -26,39 +26,46 @@ class WDistanceGrader(CommonGrader):
         else:
             return 'Try harder!'
 
+    def check_column(self, row_name, fields):
+        if not row_name in fields:
+            self.grading_message = 'Bad submission: column {} not found in Answer table'.format(row_name)
+            self.grading_success = False
+            return False
+        else:
+            return True
+
     def grade(self):
         if self.submission_content is not None:
             self.app.logger.info('Starting to grade {}'.format(self.submission_id))
             try:
                 b = io.BytesIO(self.submission_content)
                 f_sub = h5py.File(b)
+                
+                # check for data structure in hdf5 file
                 if not "Answer" in f_sub:
                     self.grading_message = 'Bad submission: no Answer table found'
                     self.grading_success = False
                     return
-                if not "PETime" in f_sub["Answer"].dtype.fields:
-                    self.grading_message = 'Bad submission: column PETime not found in Answer table'
-                    self.grading_success = False
+                answer_fields = f_sub['Answer'].dtype.fields;
+                if not self.check_column('PETime', answer_fields):
                     return
-                if not "EventID" in f_sub["Answer"].dtype.fields:
-                    self.grading_message = 'Bad submission: column EventID not found in Answer table'
-                    self.grading_success = False
+                if not self.check_column('EventID', answer_fields):
                     return
-                if not "ChannelID" in f_sub["Answer"].dtype.fields:
-                    self.grading_message = 'Bad submission: column ChannelID not found in Answer table'
-                    self.grading_success = False
+                if not self.check_column('ChannelID', answer_fields):
                     return
-                if not "Weight" in f_sub["Answer"].dtype.fields:
-                    self.grading_message = 'Bad submission: column Weight not found in Answer table'
-                    self.grading_success = False
+                if not self.check_column('Weight', answer_fields):
                     return
+                
+                # read submission data
                 e_sub = f_sub["Answer"]["PETime"]
                 i_sub = f_sub["Answer"]["EventID"]
                 c_sub = f_sub["Answer"]["ChannelID"]
                 w_sub = f_sub["Answer"]["Weight"]
+                
                 df_sub = pd.DataFrame({'PETime': e_sub, 'Weight': w_sub, 'EventID': i_sub, 'ChannelID': c_sub})
                 d_sub = df_sub.groupby(['EventID', 'ChannelID']).groups
 
+                # do the actual grade
                 dists = []
                 for key in d_ans.keys():
                     if not key in d_sub.keys():
@@ -71,9 +78,11 @@ class WDistanceGrader(CommonGrader):
                 self.score = np.mean(dists)
                 self.app.logger.info('Successfully graded {}'.format(self.submission_id))
                 self.grading_success = True
+            
+            # oooooooops!
             except Exception as e:
                 traceback.print_exc()
                 self.app.logger.error('Error grading {} with error: \n {}'.format(self.submission_id, repr(e)))
-                self.grading_message = 'Bad submission'
+                self.grading_message = 'Error grading your submission: {}'.format(repr(e))
                 self.grading_success = False
 
