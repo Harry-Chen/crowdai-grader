@@ -32,16 +32,33 @@ class WDistanceGrader(CommonGrader):
             try:
                 b = io.BytesIO(self.submission_content)
                 f_sub = h5py.File(b)
-                e_sub = f_sub["GroundTruth/PETime"][:]
-                i_sub = f_sub["GroundTruth/EventID"][:]
-                c_sub = f_sub["GroundTruth/ChannelID"][:]
+                if not "Answer" in f_sub:
+                    self.grading_message = 'Bad submission: no Answer found'
+                    self.grading_success = False
+                    return
+                if not "PETime" in f_sub["Answer"].dtype.fields:
+                    self.grading_message = 'Bad submission: no PETime found in Answer table'
+                    self.grading_success = False
+                    return
+                if not "EventID" in f_sub["Answer"].dtype.fields:
+                    self.grading_message = 'Bad submission: no EventID found in Answer table'
+                    self.grading_success = False
+                    return
+                if not "ChannelID" in f_sub["Answer"].dtype.fields:
+                    self.grading_message = 'Bad submission: no ChannelID found in Answer table'
+                    self.grading_success = False
+                    return
+                e_sub = f_sub["Answer"]["PETime"]
+                i_sub = f_sub["Answer"]["EventID"]
+                c_sub = f_sub["Answer"]["ChannelID"]
                 df_sub = pd.DataFrame({'PETime': e_sub, 'EventID': i_sub, 'ChannelID': c_sub})
                 d_sub = df_sub.groupby(['EventID', 'ChannelID']).groups
 
                 dists = []
                 for key in d_ans.keys():
                     if not key in d_sub.keys():
-                        self.grading_message = 'Submission fail to include {}'.format(key)
+                        (event_id, channel_id) = key
+                        self.grading_message = 'Submission fail to include answer for event {} channel {}'.format(event_id, channel_id)
                         self.grading_success = False
                         return
                     dist = scipy.stats.wasserstein_distance(d_ans[key], d_sub[key])
