@@ -25,7 +25,7 @@ class CommonGrader(object):
     grading_success: bool = False
     answer_file_path: str = None
 
-    def __init__(self, answer_file_path, api_key, file_key, submission_id, app):
+    def __init__(self, api_key, answer_file_path, file_key, submission_id, app):
         self.app = app
         self.app.logger.info('Initializing new {} with api_key {}, file_key {}, submission_id {}'
                               .format(__name__, api_key, file_key, submission_id))
