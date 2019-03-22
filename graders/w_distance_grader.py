@@ -8,17 +8,17 @@ import h5py
 import scipy.stats
 import pandas as pd
 
-f_ans = h5py.File("static/ans.h5", "r")
-e_ans = f_ans["GroundTruth"]["PETime"][:]
-i_ans = f_ans["GroundTruth"]["EventID"][:]
-c_ans = f_ans["GroundTruth"]["ChannelID"][:]
-df_ans = pd.DataFrame({'PETime': e_ans, 'EventID': i_ans, 'ChannelID': c_ans})
-d_ans = df_ans.groupby(['EventID', 'ChannelID']).groups
-
 class WDistanceGrader(CommonGrader):
 
     def __init__(self, *args):
         super(WDistanceGrader, self).__init__(*args)
+        f_ans = h5py.File(self.answer_file_path, "r")
+        e_ans = f_ans["GroundTruth"]["PETime"][:]
+        i_ans = f_ans["GroundTruth"]["EventID"][:]
+        c_ans = f_ans["GroundTruth"]["ChannelID"][:]
+        self.df_ans = pd.DataFrame({'PETime': e_ans, 'EventID': i_ans, 'ChannelID': c_ans})
+        self.d_ans = self.df_ans.groupby(['EventID', 'ChannelID']).groups
+
 
     def generate_success_message(self):
         if self.score == 0:
@@ -67,15 +67,22 @@ class WDistanceGrader(CommonGrader):
 
                 # do the actual grade
                 dists = []
-                for key in d_ans.keys():
+                pois = []
+                for key in self.d_ans.keys():
                     if not key in d_sub.keys():
                         (event_id, channel_id) = key
                         self.grading_message = 'Submission fail to include answer for event {} channel {}'.format(event_id, channel_id)
                         self.grading_success = False
                         return
-                    dist = scipy.stats.wasserstein_distance(df_ans['PETime'][d_ans[key]], df_sub['PETime'][d_sub[key]], v_weights=df_sub['Weight'][d_sub[key]])
+                    dist = scipy.stats.wasserstein_distance(self.df_ans['PETime'][self.d_ans[key]], df_sub['PETime'][d_sub[key]], v_weights=df_sub['Weight'][d_sub[key]])
                     dists.append(dist)
+                    Q = len(self.df_ans['PETime'][self.d_ans[key]])
+                    q = np.sum(df_sub['Weight'][d_sub[key]])
+                    I = (Q + q) / 2
+                    poi = np.abs(Q - q) * np.exp(-I) / np.factorial(Q) * (I ** Q)
+                    pois.append(poi)
                 self.score = np.mean(dists)
+                self.secondary_score = np.mean(pois)
                 self.app.logger.info('Successfully graded {}'.format(self.submission_id))
                 self.grading_success = True
 

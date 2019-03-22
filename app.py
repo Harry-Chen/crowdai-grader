@@ -34,7 +34,7 @@ def enqueue_grading_job() -> str:
         return jsonify({'message': 'No grader found'}), 400
     else:
         g = grader_result[0]
-        grader = g['class'](g['api_key'], file_key, submission_id, app)
+        grader = g['class'](g['api_key'], g['answer_file'], file_key, submission_id, app)
         _thread.start_new_thread(do_grade, (grader,))
         return jsonify({'message': 'Task successfully submitted'}), 200
 
