@@ -17,8 +17,8 @@ class WDistanceGrader(CommonGrader):
         super(WDistanceGrader, self).__init__(*args)
         file_path = self.answer_file_path
         if files.__contains__(file_path):
-            self.df_ans = files[file_path].df_ans
-            self.d_ans = files[file_path].d_ans
+            self.df_ans = files[file_path]['df_ans']
+            self.d_ans = files[file_path]['d_ans']
         else:
             f_ans = h5py.File(file_path, "r")
             e_ans = f_ans["GroundTruth"]["PETime"][:]
@@ -88,11 +88,10 @@ class WDistanceGrader(CommonGrader):
                     dists.append(dist)
                     Q = len(self.df_ans['PETime'][self.d_ans[key]])
                     q = np.sum(df_sub['Weight'][d_sub[key]])
-                    I = (Q + q) / 2
-                    poi = np.abs(Q - q) * np.exp(-I) / np.math.factorial(Q) * (I ** Q)
+                    poi = np.abs(Q - q) * scipy.stats.poisson.pmf(Q, Q)
                     pois.append(poi)
                 self.score = np.mean(dists)
-                self.secondary_score = np.mean(pois)
+                self.score_secondary = np.mean(pois)
                 self.app.logger.info('Successfully graded {}'.format(self.submission_id))
                 self.grading_success = True
 
