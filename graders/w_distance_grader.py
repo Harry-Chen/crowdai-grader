@@ -16,19 +16,19 @@ class WDistanceGrader(CommonGrader):
     def __init__(self, *args):
         super(WDistanceGrader, self).__init__(*args)
         file_path = self.answer_file_path
-        if files.has_key(file_path):
+        if files.__contains__(file_path):
             self.df_ans = files[file_path].df_ans
             self.d_ans = files[file_path].d_ans
         else:
-            f_ans = h5py.File(self.file_path, "r")
+            f_ans = h5py.File(file_path, "r")
             e_ans = f_ans["GroundTruth"]["PETime"][:]
             i_ans = f_ans["GroundTruth"]["EventID"][:]
             c_ans = f_ans["GroundTruth"]["ChannelID"][:]
             self.df_ans = pd.DataFrame({'PETime': e_ans, 'EventID': i_ans, 'ChannelID': c_ans})
             self.d_ans = self.df_ans.groupby(['EventID', 'ChannelID']).groups
             files[file_path] = {}
-            files[file_path].df_ans = self.df_ans
-            files[file_path].d_ans = self.d_ans
+            files[file_path]['df_ans'] = self.df_ans
+            files[file_path]['d_ans'] = self.d_ans
 
     def generate_success_message(self):
         if self.score == 0:
@@ -89,7 +89,7 @@ class WDistanceGrader(CommonGrader):
                     Q = len(self.df_ans['PETime'][self.d_ans[key]])
                     q = np.sum(df_sub['Weight'][d_sub[key]])
                     I = (Q + q) / 2
-                    poi = np.abs(Q - q) * np.exp(-I) / np.factorial(Q) * (I ** Q)
+                    poi = np.abs(Q - q) * np.exp(-I) / np.math.factorial(Q) * (I ** Q)
                     pois.append(poi)
                 self.score = np.mean(dists)
                 self.secondary_score = np.mean(pois)
