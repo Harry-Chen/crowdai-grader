@@ -8,23 +8,33 @@ import h5py
 import scipy.stats
 import pandas as pd
 
+# cache hdf5 results
+files = {}
+
 class WDistanceGrader(CommonGrader):
 
     def __init__(self, *args):
         super(WDistanceGrader, self).__init__(*args)
-        f_ans = h5py.File(self.answer_file_path, "r")
-        e_ans = f_ans["GroundTruth"]["PETime"][:]
-        i_ans = f_ans["GroundTruth"]["EventID"][:]
-        c_ans = f_ans["GroundTruth"]["ChannelID"][:]
-        self.df_ans = pd.DataFrame({'PETime': e_ans, 'EventID': i_ans, 'ChannelID': c_ans})
-        self.d_ans = self.df_ans.groupby(['EventID', 'ChannelID']).groups
-
+        file_path = self.answer_file_path
+        if files.has_key(file_path):
+            self.df_ans = files[file_path].df_ans
+            self.d_ans = files[file_path].d_ans
+        else:
+            f_ans = h5py.File(self.file_path, "r")
+            e_ans = f_ans["GroundTruth"]["PETime"][:]
+            i_ans = f_ans["GroundTruth"]["EventID"][:]
+            c_ans = f_ans["GroundTruth"]["ChannelID"][:]
+            self.df_ans = pd.DataFrame({'PETime': e_ans, 'EventID': i_ans, 'ChannelID': c_ans})
+            self.d_ans = self.df_ans.groupby(['EventID', 'ChannelID']).groups
+            files[file_path] = {}
+            files[file_path].df_ans = self.df_ans
+            files[file_path].d_ans = self.d_ans
 
     def generate_success_message(self):
         if self.score == 0:
-            return 'Well done!'
+            return 'You must be heroxbd!'
         else:
-            return 'Try harder!'
+            return 'Successfully graded.'
 
     def check_column(self, row_name, fields):
         if not row_name in fields:
