@@ -7,6 +7,7 @@ import numpy as np
 import h5py
 import scipy.stats
 import pandas as pd
+from time import time
 
 # cache hdf5 results
 files = {}
@@ -31,10 +32,8 @@ class WDistanceGrader(CommonGrader):
             files[file_path]['d_ans'] = self.d_ans
 
     def generate_success_message(self):
-        if self.score == 0:
-            return 'You must be heroxbd!'
-        else:
-            return 'Successfully graded.'
+        seconds = self.stop_time - self.start_time
+        return 'Successfully graded your submission in {:.3f} seconds.'.format(seconds)
 
     def check_column(self, row_name, fields):
         if not row_name in fields:
@@ -47,6 +46,7 @@ class WDistanceGrader(CommonGrader):
     def grade(self):
         if self.submission_content is not None:
             self.app.logger.info('Starting to grade {}'.format(self.submission_id))
+            self.start_time = time()
             try:
                 b = io.BytesIO(self.submission_content)
                 f_sub = h5py.File(b)
@@ -92,6 +92,7 @@ class WDistanceGrader(CommonGrader):
                     pois.append(poi)
                 self.score = np.mean(dists)
                 self.score_secondary = np.mean(pois)
+                self.stop_time = time()
                 self.app.logger.info('Successfully graded {}'.format(self.submission_id))
                 self.grading_success = True
 
