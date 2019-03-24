@@ -8,6 +8,7 @@ import _thread
 import logging
 from logging.handlers import RotatingFileHandler
 import sys
+import yappi
 
 app = Flask(__name__)
 handler = logging.StreamHandler(sys.stderr)

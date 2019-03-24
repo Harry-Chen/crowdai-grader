@@ -4,13 +4,46 @@ import traceback
 import io
 import numpy as np
 import h5py
-import scipy.stats
 import pandas as pd
+import scipy.stats
 from time import time
+from setproctitle import setproctitle
+
+import sys
+import os
+import tempfile
+import json
 
 # cache hdf5 results
 files = {}
 
+
+def wpdistance(ansg, subg):
+    '''
+    do the actual grade
+
+    return the mean Wasserstain and Poisson distances.
+    '''
+    dists = pois = 0
+
+    gl = ansg.ngroups
+    assert subg.ngroups >= gl, 'Number of answers in the submission is less than {}.'.format(gl)
+
+    si = iter(subg)
+    for a in ansg:
+        try:
+            while True:
+                s = next(si)
+                if s[0] == a[0]:
+                    break
+        except StopIteration:
+            raise KeyError(a[0])
+        wl = s[1]['Weight'].values
+        dists += scipy.stats.wasserstein_distance(a[1]['PETime'].values, 
+                s[1]['PETime'].values, v_weights=wl)
+        Q = len(a[1]); q = np.sum(wl)
+        pois += np.abs(Q - q) * scipy.stats.poisson.pmf(Q, Q)
+    return dists/gl, pois/gl
 
 class WDistanceGrader(CommonGrader):
 
@@ -18,18 +51,12 @@ class WDistanceGrader(CommonGrader):
         super(WDistanceGrader, self).__init__(*args)
         file_path = self.answer_file_path
         if files.__contains__(file_path):
-            self.df_ans = files[file_path]['df_ans']
-            self.d_ans = files[file_path]['d_ans']
+            self.ansg = files[file_path]
         else:
-            f_ans = h5py.File(file_path, "r")
-            e_ans = f_ans["GroundTruth"]["PETime"][:]
-            i_ans = f_ans["GroundTruth"]["EventID"][:]
-            c_ans = f_ans["GroundTruth"]["ChannelID"][:]
-            self.df_ans = pd.DataFrame({'PETime': e_ans, 'EventID': i_ans, 'ChannelID': c_ans})
-            self.d_ans = self.df_ans.groupby(['EventID', 'ChannelID']).groups
-            files[file_path] = {}
-            files[file_path]['df_ans'] = self.df_ans
-            files[file_path]['d_ans'] = self.d_ans
+            df_ans = pd.read_hdf(file_path, "GroundTruth")
+            self.ansg = df_ans.groupby(['EventID', 'ChannelID'], as_index=True)
+
+            files[file_path] = self.ansg
 
     def generate_success_message(self):
         seconds = self.stop_time - self.start_time
@@ -37,69 +64,94 @@ class WDistanceGrader(CommonGrader):
 
     def check_column(self, row_name, fields):
         if row_name not in fields:
-            self.grading_message = 'Bad submission: column {} not found in Answer table'.format(row_name)
-            self.grading_success = False
-            return False
-        else:
-            return True
+            raise ValueError('Bad submission: column {} not found in Answer table'.format(row_name))
 
     def grade(self):
-        if self.submission_content is not None:
-            self.app.logger.info('Starting to grade {}'.format(self.submission_id))
+        
+        if self.submission_content == None:
+            return
+
+        r, w = os.pipe()
+        child_pid = os.fork()
+
+        if child_pid != 0:
+            # parent process
+            setproctitle('crowdAI grader worker, waiting for submission {}'.format(self.submission_id))
+            os.close(w)
+            msg_pipe = os.fdopen(r)
             self.start_time = time()
+            message = json.loads(msg_pipe.read())
+            self.app.logger.info('Got message from child: {}'.format(message))
+            self.stop_time = time()
+            
+            self.grading_success = message['grading_success']
+            if not self.grading_success:
+                self.grading_message = message['grading_message']
+            else:
+                self.score = float(message['score'])
+                self.score_secondary = float(message['score_secondary'])
+            
+            os.waitpid(child_pid, 0) # wait for child to finish
+            msg_pipe.close()
+            self.app.logger.info('Child process for submission {} exits'.format(self.submission_id))
+        else:
+            # child process
+            os.close(r)
+            msg_pipe = os.fdopen(w, 'w')
+            self.app.logger.info('Forked child starting to grade submission {}'.format(self.submission_id))
+            setproctitle('crowdAI grader worker for submission {}'.format(self.submission_id))
             try:
                 b = io.BytesIO(self.submission_content)
                 f_sub = h5py.File(b)
-                
                 # check for data structure in hdf5 file
                 if "Answer" not in f_sub:
-                    self.grading_message = 'Bad submission: no Answer table found'
-                    self.grading_success = False
-                    return
+                    raise ValueError('Bad submission: no Answer table found')
                 answer_fields = f_sub['Answer'].dtype.fields
-                if not self.check_column('PETime', answer_fields):
-                    return
-                if not self.check_column('EventID', answer_fields):
-                    return
-                if not self.check_column('ChannelID', answer_fields):
-                    return
-                if not self.check_column('Weight', answer_fields):
-                    return
-                
-                # read submission data
-                e_sub = f_sub["Answer"]["PETime"]
-                i_sub = f_sub["Answer"]["EventID"]
-                c_sub = f_sub["Answer"]["ChannelID"]
-                w_sub = f_sub["Answer"]["Weight"]
-                
-                df_sub = pd.DataFrame({'PETime': e_sub, 'Weight': w_sub, 'EventID': i_sub, 'ChannelID': c_sub})
-                d_sub = df_sub.groupby(['EventID', 'ChannelID']).groups
-                
-                # do the actual grade
-                dists = []
-                pois = []
-                for key in self.d_ans.keys():
-                    if not key in d_sub.keys():
-                        (event_id, channel_id) = key
-                        self.grading_message = 'Submission fail to include answer for event {} channel {}'.format(event_id, channel_id)
-                        self.grading_success = False
-                        return
-                    dist = scipy.stats.wasserstein_distance(self.df_ans['PETime'][self.d_ans[key]], df_sub['PETime'][d_sub[key]], v_weights=df_sub['Weight'][d_sub[key]])
-                    dists.append(dist)
-                    Q = len(self.df_ans['PETime'][self.d_ans[key]])
-                    q = np.sum(df_sub['Weight'][d_sub[key]])
-                    poi = np.abs(Q - q) * scipy.stats.poisson.pmf(Q, Q)
-                    pois.append(poi)
-                self.score = np.mean(dists)
-                self.score_secondary = np.mean(pois)
+                self.check_column('PETime', answer_fields)
+                self.check_column('EventID', answer_fields)
+                self.check_column('ChannelID', answer_fields)
+                self.check_column('Weight', answer_fields)
 
-                self.stop_time = time()
+                
+                df_sub = pd.DataFrame.from_records(f_sub['Answer'][()])
+                subg = df_sub.groupby(['EventID', 'ChannelID'], as_index=True)
+
+                (self.score, self.score_secondary) = wpdistance(self.ansg, subg)
+
                 self.app.logger.info('Successfully graded {}'.format(self.submission_id))
                 self.grading_success = True
 
             # oooooooops!
+            except KeyError as e:
+                self.grading_message = 'Submission fail to include answer for event {} channel {}'.format(*e)
+                self.grading_success = False
+            except (AssertionError, ValueError) as e:
+                self.grading_message = e
+                self.grading_success = False
             except Exception as e:
                 traceback.print_exc()
-                self.app.logger.error('Error grading {} with error: \n {}'.format(self.submission_id, repr(e)))
-                self.grading_message = 'Error grading your submission: {}'.format(repr(e))
+                self.app.logger.error('Error grading {}: \n {}'.format(self.submission_id, repr(e)))
+                self.grading_message = 'Error grading your submission: {}'.format(str(e))
                 self.grading_success = False
+
+            finally:
+                # write result to parent process, then exit
+                self.app.logger.info('Forked child done grading submission {}'.format(self.submission_id))
+                msg_pipe.write(json.dumps({'grading_success': self.grading_success, 'grading_message': str(self.grading_message), 'score': str(self.score), 'score_secondary': str(self.score_secondary)}))
+                msg_pipe.close()
+                sys.exit()
+
+if __name__=="__main__":
+    import argparse
+    psr = argparse.ArgumentParser()
+    psr.add_argument("-r", dest='ref', help="reference")
+    psr.add_argument('ipt', help="input to be graded")
+    args = psr.parse_args()
+
+    df_ans = pd.read_hdf(args.ref, "GroundTruth")
+    df_sub = pd.read_hdf(args.ipt, "Answer")
+
+    ansg = df_ans.groupby(['EventID', 'ChannelID'], as_index=True)
+    subg = df_sub.groupby(['EventID', 'ChannelID'], as_index=True)
+
+    print("W Dist: {}, P Dist: {}".format(*wpdistance(ansg, subg)))

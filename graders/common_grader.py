@@ -3,7 +3,6 @@ from abc import abstractmethod
 from botocore.config import Config
 from flask import Flask
 import config
-import grader_list
 import requests
 import boto3
 
@@ -81,6 +80,7 @@ class CommonGrader(object):
         self.post_grade(data)
 
     def post_grade(self, data):
+        import grader_list
 
         url = grader_list.CROWDAI_API_EXTERNAL_GRADER_URL + '/' + self.submission_id
 
