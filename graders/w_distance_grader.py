@@ -74,7 +74,7 @@ class WDistanceGrader(CommonGrader):
                 
                 df_sub = pd.DataFrame({'PETime': e_sub, 'Weight': w_sub, 'EventID': i_sub, 'ChannelID': c_sub})
                 d_sub = df_sub.groupby(['EventID', 'ChannelID']).groups
-
+                
                 # do the actual grade
                 dists = []
                 pois = []
@@ -92,6 +92,7 @@ class WDistanceGrader(CommonGrader):
                     pois.append(poi)
                 self.score = np.mean(dists)
                 self.score_secondary = np.mean(pois)
+
                 self.stop_time = time()
                 self.app.logger.info('Successfully graded {}'.format(self.submission_id))
                 self.grading_success = True
@@ -102,4 +103,3 @@ class WDistanceGrader(CommonGrader):
                 self.app.logger.error('Error grading {} with error: \n {}'.format(self.submission_id, repr(e)))
                 self.grading_message = 'Error grading your submission: {}'.format(repr(e))
                 self.grading_success = False
-

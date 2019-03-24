@@ -41,7 +41,19 @@ def enqueue_grading_job() -> str:
 def do_grade(g, file_key, submission_id, app):
     grader = g['class'](g['api_key'], g['answer_file'], file_key, submission_id, app)
     grader.fetch_submission()
+    
+    if g['enable_perf']:
+        yappi.set_clock_type('cpu')
+        yappi.start(builtins=True)
+    
     grader.grade()
+    
+    if g['enable_perf']:
+        yappi.stop()
+        stats = yappi.get_func_stats()
+        stats.print_all()
+        stats.save('perf/{}.pstat'.format(submission_id), type='pstat')
+    
     grader.submit_grade()
 
 

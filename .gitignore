@@ -98,3 +98,4 @@ __pycache__
 config.py
 grader_list.py
 static/
+perf/

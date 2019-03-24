@@ -88,5 +88,3 @@ class CommonGrader(object):
             'Authorization': 'Token token={}'.format(self.api_key)
         })
         self.app.logger.info('Server response: {}'.format(response.text))
-
-
