@@ -1,4 +1,3 @@
-import random
 from graders.common_grader import CommonGrader
 
 import traceback
@@ -11,6 +10,7 @@ from time import time
 
 # cache hdf5 results
 files = {}
+
 
 class WDistanceGrader(CommonGrader):
 
@@ -36,7 +36,7 @@ class WDistanceGrader(CommonGrader):
         return 'Successfully graded your submission in {:.3f} seconds.'.format(seconds)
 
     def check_column(self, row_name, fields):
-        if not row_name in fields:
+        if row_name not in fields:
             self.grading_message = 'Bad submission: column {} not found in Answer table'.format(row_name)
             self.grading_success = False
             return False
@@ -52,11 +52,11 @@ class WDistanceGrader(CommonGrader):
                 f_sub = h5py.File(b)
                 
                 # check for data structure in hdf5 file
-                if not "Answer" in f_sub:
+                if "Answer" not in f_sub:
                     self.grading_message = 'Bad submission: no Answer table found'
                     self.grading_success = False
                     return
-                answer_fields = f_sub['Answer'].dtype.fields;
+                answer_fields = f_sub['Answer'].dtype.fields
                 if not self.check_column('PETime', answer_fields):
                     return
                 if not self.check_column('EventID', answer_fields):

@@ -11,7 +11,7 @@ s3 = boto3.resource('s3',
                     config=Config(connect_timeout=5, retries={'max_attempts': 5}, signature_version='s3v4'),
                     aws_access_key_id=config.AWS_ACCESS_KEY_ID,
                     aws_secret_access_key=config.AWS_SECRET_ACCESS_KEY,
-                    #region_name=config.AWS_REGION,
+                    # region_name=config.AWS_REGION,
                     endpoint_url=config.AWS_ENDPOINT)
 
 
@@ -58,7 +58,6 @@ class CommonGrader(object):
     def generate_success_message(self):
         return ''
 
-
     def submit_grade(self):
         
         if self.grading_success:
@@ -80,7 +79,6 @@ class CommonGrader(object):
                 'grading_message': self.grading_message
             }
         self.post_grade(data)
-
 
     def post_grade(self, data):
 

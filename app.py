@@ -18,6 +18,7 @@ handler.setLevel(logging.INFO)
 app.logger.addHandler(handler)
 app.logger.setLevel(logging.INFO)
 
+
 @app.route('/enqueue_grading_job', methods=['POST'])
 def enqueue_grading_job() -> str:
 
@@ -46,5 +47,5 @@ def do_grade(grader):
 
 
 if __name__ == '__main__':
-    app.run(port=10000)
+    app.run(port=FLASK_PORT, processes=FLASK_PROCESSES)
 
