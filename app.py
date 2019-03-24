@@ -34,18 +34,17 @@ def enqueue_grading_job() -> str:
         app.logger.warning('No grader found, will return error')
         return jsonify({'message': 'No grader found'}), 400
     else:
-        g = grader_result[0]
-        grader = g['class'](g['api_key'], g['answer_file'], file_key, submission_id, app)
-        _thread.start_new_thread(do_grade, (grader,))
+        _thread.start_new_thread(do_grade, (grader_result[0], file_key, submission_id, app))
         return jsonify({'message': 'Task successfully submitted'}), 200
 
 
-def do_grade(grader):
+def do_grade(g, file_key, submission_id, app):
+    grader = g['class'](g['api_key'], g['answer_file'], file_key, submission_id, app)
     grader.fetch_submission()
     grader.grade()
     grader.submit_grade()
 
 
 if __name__ == '__main__':
-    app.run(port=FLASK_PORT, processes=FLASK_PROCESSES)
+    app.run(port=FLASK_PORT)
 
