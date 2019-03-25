@@ -7,7 +7,7 @@ import h5py
 import pandas as pd
 import scipy.stats
 from time import time
-from setproctitle import setproctitle
+from setproctitle import setproctitle, getproctitle
 
 import sys
 import os
@@ -37,7 +37,7 @@ def wpdistance(ansg, subg):
                 if s[0] == a[0]:
                     break
         except StopIteration:
-            raise KeyError(a[0])
+            raise KeyError(a[0]) from None
         wl = s[1]['Weight'].values
         dists += scipy.stats.wasserstein_distance(a[1]['PETime'].values, 
                 s[1]['PETime'].values, v_weights=wl)
@@ -76,7 +76,7 @@ class WDistanceGrader(CommonGrader):
 
         if child_pid != 0:
             # parent process
-            setproctitle('crowdAI grader worker, waiting for submission {}'.format(self.submission_id))
+            setproctitle('crowdAI grader')
             os.close(w)
             msg_pipe = os.fdopen(r)
             self.start_time = time()
@@ -99,7 +99,7 @@ class WDistanceGrader(CommonGrader):
             os.close(r)
             msg_pipe = os.fdopen(w, 'w')
             self.app.logger.info('Forked child starting to grade submission {}'.format(self.submission_id))
-            setproctitle('crowdAI grader worker for submission {}'.format(self.submission_id))
+            setproctitle('crowdAI grader for submission {}'.format(self.submission_id))
             try:
                 b = io.BytesIO(self.submission_content)
                 f_sub = h5py.File(b)
@@ -123,7 +123,7 @@ class WDistanceGrader(CommonGrader):
 
             # oooooooops!
             except KeyError as e:
-                self.grading_message = 'Submission fail to include answer for event {} channel {}'.format(*e)
+                self.grading_message = 'Submission fail to include answer for event {} channel {}'.format(*e.args[0])
                 self.grading_success = False
             except (AssertionError, ValueError) as e:
                 self.grading_message = e
