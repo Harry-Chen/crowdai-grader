@@ -9,40 +9,57 @@ import scipy.stats
 from time import time
 from setproctitle import setproctitle, getproctitle
 
-import sys
-import os
+import sys, os, itertools as it
 import tempfile
 import json
 
 # cache hdf5 results
 files = {}
 
-
-def wpdistance(ansg, subg):
+def wpdistance(df_ans, df_sub):
     '''
     do the actual grade
 
     return the mean Wasserstain and Poisson distances.
     '''
-    dists = pois = 0
+    dists = pois = gl = 0
 
-    gl = ansg.ngroups
-    assert subg.ngroups >= gl, 'Number of answers in the submission is less than {}.'.format(gl)
+    # number of channels is 30
+    e_ans = df_ans['EventID']*30 + df_ans['ChannelID']
+    e_sub = df_sub['EventID']*30 + df_sub['ChannelID']
+    # bad: addition memory allocation
+    e_sub = np.append(e_sub, e_sub[-1]+1)
 
-    si = iter(subg)
-    for a in ansg:
-        try:
-            while True:
-                s = next(si)
-                if s[0] == a[0]:
-                    break
-        except StopIteration:
-            raise KeyError(a[0]) from None
-        wl = s[1]['Weight'].values
-        dists += scipy.stats.wasserstein_distance(a[1]['PETime'].values, 
-                s[1]['PETime'].values, v_weights=wl)
-        Q = len(a[1]); q = np.sum(wl)
-        pois += np.abs(Q - q) * scipy.stats.poisson.pmf(Q, Q)
+    i0 = j0 = 0
+    eid0 = e_ans[i0]
+    ejd0 = e_sub[j0]
+
+    # append an additional largest eid, so that the last event is also graded
+    for i, eid in enumerate(it.chain(np.nditer(e_ans), [e_ans[-1]+1])):
+        if eid > eid0:
+            while ejd0 < eid0:
+                j0 += 1
+                ejd0 = e_sub[j0]
+            assert ejd0 == eid0, 'Answer must include EventID {} Channel {}.'.format(eid0//30, eid0 % 30)
+
+            j = j0; ejd = e_sub[j]
+            while ejd == ejd0:
+                j+=1
+                ejd = e_sub[j]
+
+            # scores
+            wl = df_sub[j0:j]['Weight']
+            dists += scipy.stats.wasserstein_distance(df_ans[i0:i]['PETime'],
+                                                      df_sub[j0:j]['PETime'], v_weights=wl)
+            Q = i-i0; q = np.sum(wl)
+            pois += np.abs(Q - q) * scipy.stats.poisson.pmf(Q, Q)
+
+            gl += 1
+            i0 = i
+            j0 = j
+            eid0 = eid
+            ejd0 = ejd
+
     return dists/gl, pois/gl
 
 class WDistanceGrader(CommonGrader):
@@ -51,12 +68,11 @@ class WDistanceGrader(CommonGrader):
         super(WDistanceGrader, self).__init__(*args)
         file_path = self.answer_file_path
         if files.__contains__(file_path):
-            self.ansg = files[file_path]
+            self.df_ans = files[file_path]
         else:
-            df_ans = pd.read_hdf(file_path, "GroundTruth")
-            self.ansg = df_ans.groupby(['EventID', 'ChannelID'], as_index=True)
-
-            files[file_path] = self.ansg
+            with h5py.File(file_path) as f_ans:
+                self.df_ans = f_ans["GroundTruth"][()]
+            files[file_path] = self.df_ans
 
     def generate_success_message(self):
         seconds = self.stop_time - self.start_time
@@ -102,31 +118,25 @@ class WDistanceGrader(CommonGrader):
             setproctitle('crowdAI grader for submission {}'.format(self.submission_id))
             try:
                 b = io.BytesIO(self.submission_content)
-                f_sub = h5py.File(b)
-                # check for data structure in hdf5 file
-                if "Answer" not in f_sub:
-                    raise ValueError('Bad submission: no Answer table found')
-                answer_fields = f_sub['Answer'].dtype.fields
-                self.check_column('PETime', answer_fields)
-                self.check_column('EventID', answer_fields)
-                self.check_column('ChannelID', answer_fields)
-                self.check_column('Weight', answer_fields)
+                with h5py.File(b) as f_sub:
+                    # check for data structure in hdf5 file
+                    if "Answer" not in f_sub:
+                        raise ValueError('Bad submission: no Answer table found')
+                    answer_fields = f_sub['Answer'].dtype.fields
+                    self.check_column('PETime', answer_fields)
+                    self.check_column('EventID', answer_fields)
+                    self.check_column('ChannelID', answer_fields)
+                    self.check_column('Weight', answer_fields)
+                    df_sub = f_sub['Answer'][()]
 
-                
-                df_sub = pd.DataFrame.from_records(f_sub['Answer'][()])
-                subg = df_sub.groupby(['EventID', 'ChannelID'], as_index=True)
-
-                (self.score, self.score_secondary) = wpdistance(self.ansg, subg)
+                (self.score, self.score_secondary) = wpdistance(self.df_ans, df_sub)
 
                 self.app.logger.info('Successfully graded {}'.format(self.submission_id))
                 self.grading_success = True
 
             # oooooooops!
-            except KeyError as e:
-                self.grading_message = 'Submission fail to include answer for event {} channel {}'.format(*e.args[0])
-                self.grading_success = False
             except (AssertionError, ValueError) as e:
-                self.grading_message = e
+                self.grading_message = str(e)
                 self.grading_success = False
             except Exception as e:
                 traceback.print_exc()
@@ -148,10 +158,8 @@ if __name__=="__main__":
     psr.add_argument('ipt', help="input to be graded")
     args = psr.parse_args()
 
-    df_ans = pd.read_hdf(args.ref, "GroundTruth")
-    df_sub = pd.read_hdf(args.ipt, "Answer")
+    with h5py.File(args.ref) as ref, h5py.File(args.ipt) as ipt:
+        df_ans = ref["GroundTruth"][...]
+        df_sub = ipt["Answer"][...]
 
-    ansg = df_ans.groupby(['EventID', 'ChannelID'], as_index=True)
-    subg = df_sub.groupby(['EventID', 'ChannelID'], as_index=True)
-
-    print("W Dist: {}, P Dist: {}".format(*wpdistance(ansg, subg)))
+    print("W Dist: {}, P Dist: {}".format(*wpdistance(df_ans, df_sub)))
