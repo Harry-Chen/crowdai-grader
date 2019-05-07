@@ -22,43 +22,36 @@ def wpdistance(df_ans, df_sub):
 
     return the mean Wasserstain and Poisson distances.
     '''
-    dists = pois = gl = 0
+    dists = pois = 0
 
     # number of channels is 30
     e_ans = df_ans['EventID']*30 + df_ans['ChannelID']
+    e_ans, i_ans = np.unique(e_ans, return_index=True)
+    gl = len(e_ans)
+
     e_sub = df_sub['EventID']*30 + df_sub['ChannelID']
-    # bad: addition memory allocation
-    e_sub = np.append(e_sub, e_sub[-1]+1)
+    e_sub, i_sub = np.unique(e_sub, return_index=True)
 
-    i0 = j0 = 0
-    eid0 = e_ans[i0]
-    ejd0 = e_sub[j0]
+    # bad: additional memory allocation
+    i_sub = np.append(i_sub, len(df_sub))
 
+    p = 0
+    ejd = e_sub[p]
     # append an additional largest eid, so that the last event is also graded
-    for i, eid in enumerate(it.chain(np.nditer(e_ans), [e_ans[-1]+1])):
-        if eid > eid0:
-            while ejd0 < eid0:
-                j0 += 1
-                ejd0 = e_sub[j0]
-            assert ejd0 == eid0, 'Answer must include EventID {} Channel {}.'.format(eid0//30, eid0 % 30)
+    for eid, i0, i in zip(e_ans, np.nditer(i_ans), it.chain(np.nditer(i_ans[1:]), [len(df_ans)])):
+        while ejd < eid:
+            p += 1
+            ejd = e_sub[p]
+        assert ejd == eid, 'Answer must include EventID {} Channel {}.'.format(eid//30, eid % 30)
 
-            j = j0; ejd = e_sub[j]
-            while ejd == ejd0:
-                j+=1
-                ejd = e_sub[j]
+        j0 = i_sub[p]; j = i_sub[p+1]
 
-            # scores
-            wl = df_sub[j0:j]['Weight']
-            dists += scipy.stats.wasserstein_distance(df_ans[i0:i]['PETime'],
-                                                      df_sub[j0:j]['PETime'], v_weights=wl)
-            Q = i-i0; q = np.sum(wl)
-            pois += np.abs(Q - q) * scipy.stats.poisson.pmf(Q, Q)
-
-            gl += 1
-            i0 = i
-            j0 = j
-            eid0 = eid
-            ejd0 = ejd
+        # scores
+        wl = df_sub[j0:j]['Weight']
+        dists += scipy.stats.wasserstein_distance(df_ans[i0:i]['PETime'],
+                                                  df_sub[j0:j]['PETime'], v_weights=wl)
+        Q = i-i0; q = np.sum(wl)
+        pois += np.abs(Q - q) * scipy.stats.poisson.pmf(Q, Q)
 
     return dists/gl, pois/gl
 
