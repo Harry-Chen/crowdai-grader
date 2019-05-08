@@ -42,7 +42,7 @@ def wpdistance(df_ans, df_sub):
         while ejd < eid:
             p += 1
             ejd = e_sub[p]
-        assert ejd == eid, 'Answer must include EventID {} Channel {}.'.format(eid//30, eid % 30)
+        assert ejd == eid, 'Answer must include Event {} Channel {}.'.format(eid//30, eid % 30)
 
         j0 = i_sub[p]; j = i_sub[p+1]
 
