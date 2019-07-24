@@ -40,16 +40,16 @@ def wlDistanceDic(df_ans, df_sub):
     length = len(df_ans.keys())
     assert len(df_sub.keys())==length, 'The number of answer is wrong'
     
-    wDistStore = np.zeros(length)
+    L1DistStore = np.zeros(length)
     L2DistStore = np.zeros(length)
     for i,s in enumerate(df_ans.keys()):
         e_ans = df_ans[s][:]
         assert (s in df_sub.keys()), 'Answer must include INDEX {}'.format(s)
         e_sub = df_sub[s][:]
         assert (e_sub.shape == (201,201)), 'INDEX {} shape must be (201,201)'.format(s)
-        wDistStore[i] = 0 # scipy.stats.wasserstein_distance()
+        L1DistStore[i] = np.sum(np.abs(e_ans-e_sub)) # scipy.stats.wasserstein_distance()
         L2DistStore[i] = np.linalg.norm(e_ans-e_sub)
-    return np.mean(L2DistStore)
+    return np.mean(L2DistStore),np.mean(L1DistStore)
 
 class isoenergyGrader(CommonGrader):
     def __init__(self, *args):
@@ -100,7 +100,7 @@ class isoenergyGrader(CommonGrader):
                     for s in f_sub.keys():
                         df_sub[s] = f_sub[s]['isoE'][:]
                 
-                self.score = wlDistanceDic(self.df_ans, df_sub)
+                (self.score,self.score_secondary) = wlDistanceDic(self.df_ans, df_sub)
                 self.app.logger.info('Successfully graded {}'.format(self.submission_id))
                 self.grading_success = True
             
@@ -135,4 +135,4 @@ if __name__=="__main__":
         for s in df_sub.keys():
             df_subDic[s] = df_sub[s]['isoE'][:]
         print("W Dist:{}, L2 Dist: {}".format(*wlDistance(df_ans, df_sub)))
-    print("L2 Dist: {}".format(wlDistanceDic(df_ansDic, df_subDic)))
+    print("L2 Dist: {};L1 Dist: {}".format(*wlDistanceDic(df_ansDic, df_subDic)))
