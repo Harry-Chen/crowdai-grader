@@ -55,9 +55,10 @@ def StupidDistance(df_ans, df_sub):
                 .format( AnswerKing.shape, AnswerQueen.shape)
         SceneDist = np.zeros(AnswerKing.shape[1])
         for SourceID in range(AnswerKing.shape[1]):
-            SceneDist[SourceID] = CalculateSin( AnswerKing[:, SourceID], AnswerQueen[:, SourceID])
-        AngleDist[SceneID] = np.sum( SceneDist)
-    return np.sum(OffsetDist), np.sum(AngleDist)
+            SceneDist[SourceID] = CalculateSin(AnswerKing[:, SourceID], AnswerQueen[:, SourceID])
+        AngleDist[SceneID] = np.sum(SceneDist)
+
+    return np.sum(AngleDist), np.sum(OffsetDist)
 
 
 class TOLAGrader(CommonGrader):
