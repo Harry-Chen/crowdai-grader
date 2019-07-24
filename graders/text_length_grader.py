@@ -13,5 +13,4 @@ class TextLengthGrader(CommonGrader):
             if length <= 1000:
                 return length, random.uniform(0.0, 100.0)
             else:
-                self.grading_message = 'Submission with {} bytes is too long!'.format(length)
-                return None
+                raise ValueError('Submission with {} bytes is too long!'.format(length))

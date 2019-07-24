@@ -102,14 +102,12 @@ class CommonGrader(object):
 
             # oooooooops!
             except (AssertionError, ValueError) as e:
-                if self.grading_message is not None:
-                    self.grading_message = str(e)
+                self.grading_message = str(e)
                 self.grading_success = False
             except Exception as e:
                 traceback.print_exc()
                 self.app.logger.error('Error grading {}: \n {}'.format(self.submission_id, repr(e)))
-                if self.grading_message is not None:
-                    self.grading_message = 'Error grading your submission: {}'.format(str(e))
+                self.grading_message = 'Error grading your submission: {}'.format(str(e))
                 self.grading_success = False
 
             finally:
