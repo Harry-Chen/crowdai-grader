@@ -25,6 +25,8 @@ def CalculateSin(vec1, vec2):
     Cos_of_them = ( np.sqrt( np.dot( Kvec1, Kvec2))
             / np.linalg.norm( Kvec1)
             / np.linalg.norm( Kvec2))
+    if np.abs(Cos_of_them) > 1:
+        Cos_of_them = 1
     return np.sqrt( 1 - Cos_of_them**2)
 
 def StupidDistance(df_ans, df_sub):
@@ -37,6 +39,9 @@ def StupidDistance(df_ans, df_sub):
         SceneKey = SCENE_PREFIX + str( SceneID)
         AnswerKing = df_ans[SceneKey]["station_time_offset"]
         AnswerQueen = df_sub[SceneKey]["station_time_offset"]
+        assert (AnswerKing.shape == AnswerQueen.shape), \
+                'There are stations missed or duplicated. ( {} vs {} )' \
+                .format( AnswerKing.shape, AnswerQueen.shape)
         AnswerJack = AnswerKing - AnswerQueen
         OffsetDist[SceneID] = np.linalg.norm( AnswerJack)
     # angle part
@@ -66,7 +71,9 @@ class TOLAGrader(CommonGrader):
         else:
             with h5py.File(file_path) as f_ans:
                 for s in f_ans.keys():
-                    self.df_ans[s] = f_ans[s][:]
+                    self.df_ans[s] = {}
+                    for s2 in f_ans[s].keys():
+                        self.df_ans[s][s2] = f_ans[s][s2][:]
             files[file_path] = self.df_ans
 
     def do_grade(self):
@@ -74,8 +81,10 @@ class TOLAGrader(CommonGrader):
         df_sub = {}
         with h5py.File(b) as f_sub:
             for s in f_sub.keys():
-                df_sub[s] = f_sub[s][:]
-            return calcDistanceDic(self.df_ans, df_sub)
+                df_sub[s] = {}
+                for s2 in f_sub[s].keys():
+                    df_sub[s][s2] = f_sub[s][s2][:]
+            return StupidDistance(self.df_ans, df_sub)
 
 
 if __name__ == "__main__":
@@ -92,8 +101,12 @@ if __name__ == "__main__":
         df_sub = ipt['/']
     
         for s in df_ans.keys():
-            df_ansDic[s] = df_ans[s]['isoE'][:]
+            df_ansDic[s] = {}
+            for s2 in df_ans[s].keys():
+                df_ansDic[s][s2] = df_ans[s][s2][:]
         for s in df_sub.keys():
-            df_subDic[s] = df_sub[s]['isoE'][:]
+            df_subDic[s] = {}
+            for s2 in df_sub[s].keys():
+                df_subDic[s][s2] = df_sub[s][s2][:]
     
-    print("L2 Dist: {};L1 Dist: {}".format(*calcDistanceDic(df_ansDic, df_subDic)))
+    print("L2 Dist: {};L1 Dist: {}".format(*StupidDistance(df_ansDic, df_subDic)))
