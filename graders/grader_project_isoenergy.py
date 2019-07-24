@@ -48,8 +48,7 @@ class IsoenergyGrader(CommonGrader):
         with h5py.File(b) as f_sub:
             for s in f_sub.keys():
                 df_sub[s] = f_sub[s]['isoE'][:]
-
-        return calcDistanceDic(self.df_ans, df_sub)
+            return calcDistanceDic(self.df_ans, df_sub)
 
 
 if __name__ == "__main__":

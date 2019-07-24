@@ -80,7 +80,7 @@ class WDistanceGrader(CommonGrader):
             self.check_column('EventID', answer_fields)
             self.check_column('ChannelID', answer_fields)
             self.check_column('Weight', answer_fields)
-        return wpdistance(self.df_ans, f_sub['Answer'][()])
+            return wpdistance(self.df_ans, f_sub['Answer'][()])
 
 
 if __name__ == "__main__":
