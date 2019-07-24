@@ -49,7 +49,7 @@ def wlDistanceDic(df_ans, df_sub):
         assert (e_sub.shape == (201,201)), 'INDEX {} shape must be (201,201)'.format(s)
         wDistStore[i] = 0 # scipy.stats.wasserstein_distance()
         L2DistStore[i] = np.linalg.norm(e_ans-e_sub)
-    return np.mean(wDistStore),np.mean(L2DistStore)
+    return np.mean(L2DistStore)
 
 class isoenergyGrader(CommonGrader):
     def __init__(self, *args):
@@ -100,7 +100,7 @@ class isoenergyGrader(CommonGrader):
                     for s in f_sub.keys():
                         df_sub[s] = f_sub[s]['isoE'][:]
                 
-                (self.score, self.score_secondary) = wlDistanceDic(self.df_ans, df_sub)
+                self.score = wlDistanceDic(self.df_ans, df_sub)
                 self.app.logger.info('Successfully graded {}'.format(self.submission_id))
                 self.grading_success = True
             
@@ -135,4 +135,4 @@ if __name__=="__main__":
         for s in df_sub.keys():
             df_subDic[s] = df_sub[s]['isoE'][:]
         print("W Dist:{}, L2 Dist: {}".format(*wlDistance(df_ans, df_sub)))
-    print("W Dist:{}, L2 Dist: {}".format(*wlDistanceDic(df_ansDic, df_subDic)))
+    print("L2 Dist: {}".format(wlDistanceDic(df_ansDic, df_subDic)))
