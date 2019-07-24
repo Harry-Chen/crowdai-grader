@@ -7,12 +7,11 @@ class TextLengthGrader(CommonGrader):
     def __init__(self, *args):
         super(TextLengthGrader, self).__init__(*args)
 
-    def grade(self):
+    def do_grade(self):
         if self.submission_content is not None:
             length = len(self.submission_content)
             if length <= 1000:
-                self.score = length
-                self.score_secondary = random.uniform(0.0, 100.0)
-                self.grading_success = True
+                return length, random.uniform(0.0, 100.0)
             else:
                 self.grading_message = 'Submission with {} bytes is too long!'.format(length)
+                return None

@@ -7,7 +7,6 @@ class RandomPointsGrader(CommonGrader):
     def __init__(self, *args):
         super(RandomPointsGrader, self).__init__(*args)
 
-    def grade(self):
-        self.score = random.uniform(0.0, 100.0)
-        self.score_secondary = random.uniform(0.0, 100.0)
-        self.grading_success = True
+    def do_grade(self):
+        return random.uniform(0.0, 100.0), random.uniform(0.0, 100.0)
+

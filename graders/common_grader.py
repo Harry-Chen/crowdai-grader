@@ -5,6 +5,12 @@ from flask import Flask
 import config
 import requests
 import boto3
+import os
+from setproctitle import setproctitle, getproctitle
+from time import time
+import json
+import sys
+import traceback
 
 s3 = boto3.resource('s3',
                     config=Config(connect_timeout=5, retries={'max_attempts': 5}, signature_version='s3v4'),
@@ -23,6 +29,8 @@ class CommonGrader(object):
     grading_message: str = None
     grading_success: bool = False
     answer_file_path: str = None
+    start_time: float = None
+    stop_time: float = None
 
     def __init__(self, api_key, answer_file_path, file_key, submission_id, app):
         self.app = app
@@ -50,12 +58,72 @@ class CommonGrader(object):
             self.app.logger.error(error_message)
 
     @abstractmethod
-    def grade(self):
+    def do_grade(self):
         pass
 
-    @abstractmethod
+    def grade(self):
+
+        if self.submission_content is None:
+            return
+
+        r, w = os.pipe()
+        child_pid = os.fork()
+
+        if child_pid != 0:
+            # parent process
+            setproctitle('crowdAI grader')
+            os.close(w)
+            msg_pipe = os.fdopen(r)
+            self.start_time = time()
+            message = json.loads(msg_pipe.read())
+            self.app.logger.info('Got message from child: {}'.format(message))
+            self.stop_time = time()
+
+            self.grading_success = message['grading_success']
+            if not self.grading_success:
+                self.grading_message = message['grading_message']
+            else:
+                self.score = float(message['score'])
+                self.score_secondary = float(message['score_secondary'])
+
+            os.waitpid(child_pid, 0)  # wait for child to finish
+            msg_pipe.close()
+            self.app.logger.info('Child process for submission {} exits'.format(self.submission_id))
+        else:
+            # child process
+            os.close(r)
+            msg_pipe = os.fdopen(w, 'w')
+            self.app.logger.info('Forked child starting to grade submission {}'.format(self.submission_id))
+            setproctitle('crowdAI grader for submission {}'.format(self.submission_id))
+            try:
+                self.score, self.score_secondary = self.do_grade()
+                self.app.logger.info('Successfully graded {}'.format(self.submission_id))
+                self.grading_success = True
+
+            # oooooooops!
+            except (AssertionError, ValueError) as e:
+                if self.grading_message is not None:
+                    self.grading_message = str(e)
+                self.grading_success = False
+            except Exception as e:
+                traceback.print_exc()
+                self.app.logger.error('Error grading {}: \n {}'.format(self.submission_id, repr(e)))
+                if self.grading_message is not None:
+                    self.grading_message = 'Error grading your submission: {}'.format(str(e))
+                self.grading_success = False
+
+            finally:
+                # write result to parent process, then exit
+                self.app.logger.info('Forked child done grading submission {}'.format(self.submission_id))
+                msg_pipe.write(json.dumps(
+                    {'grading_success': self.grading_success, 'grading_message': str(self.grading_message),
+                     'score': str(self.score), 'score_secondary': str(self.score_secondary)}))
+                msg_pipe.close()
+                sys.exit()
+
     def generate_success_message(self):
-        return ''
+        seconds = self.stop_time - self.start_time
+        return 'Successfully graded your submission in {:.3f} seconds.'.format(seconds)
 
     def submit_grade(self):
         
