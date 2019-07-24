@@ -1,4 +1,4 @@
-from graders.common_grader import CommonGrader
+from common_grader import CommonGrader
 import random
 
 
