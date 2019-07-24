@@ -13,26 +13,8 @@ import sys, os, itertools as it
 import json
 
 files = {}
-def wlDistance(df_ans, df_sub):
-    # df_ans is the group of '/'
-    # wDist = 0
-    # L2Dist = 0
 
-    length = len(df_ans.keys())
-    assert len(df_sub.keys())==length, 'The number of answer is wrong'
-    
-    wDistStore = np.zeros(length)
-    L2DistStore = np.zeros(length)
-    for i,s in enumerate(df_ans.keys()):
-        e_ans = df_ans[s]['isoE'][:]
-        assert (s in df_sub.keys()), 'Answer must include INDEX {}'.format(s)
-        e_sub = df_sub[s]['isoE'][:]
-        assert (e_sub.shape == (201,201)), 'INDEX {} shape must be (201,201)'.format(s)
-        wDistStore[i] = 0 # scipy.stats.wasserstein_distance()
-        L2DistStore[i] = np.linalg.norm(e_ans-e_sub)
-    return np.mean(wDistStore),np.mean(L2DistStore)
-
-def wlDistanceDic(df_ans, df_sub):
+def calcDistanceDic(df_ans, df_sub):
     # df_ans is dictionary of the group of '/'
     # wDist = 0
     # L2Dist = 0
@@ -42,19 +24,22 @@ def wlDistanceDic(df_ans, df_sub):
     
     L1DistStore = np.zeros(length)
     L2DistStore = np.zeros(length)
+    
     for i,s in enumerate(df_ans.keys()):
-        e_ans = df_ans[s][:]
+        e_ans = s][:]
         assert (s in df_sub.keys()), 'Answer must include INDEX {}'.format(s)
-        e_sub = df_sub[s][:]
+        e_sub = df_sub[
         assert (e_sub.shape == (201,201)), 'INDEX {} shape must be (201,201)'.format(s)
         L1DistStore[i] = np.sum(np.abs(e_ans-e_sub)) # scipy.stats.wasserstein_distance()
         L2DistStore[i] = np.linalg.norm(e_ans-e_sub)
-    return np.mean(L2DistStore),np.mean(L1DistStore)
+    
+    return np.mean(L2DistStore), np.mean(L1DistStore)
 
-class isoenergyGrader(CommonGrader):
+
+class IsoenergyGrader(CommonGrader):
+    
     def __init__(self, *args):
-        super(isoenergyGrader, self).__init__(*args)
-        # self.answer_file_path="/home/greatofdream/physics-data/isoenergyData/train/answer.h5"
+        super(IsoenergyGrader, self).__init__(*args)
         file_path = self.answer_file_path
         self.df_ans = {}
         if files.__contains__(file_path):
@@ -64,7 +49,13 @@ class isoenergyGrader(CommonGrader):
                 for s in f_ans.keys():
                     self.df_ans[s] = f_ans[s]['isoE'][:]
             files[file_path] = self.df_ans
-        
+
+
+    def generate_success_message(self):
+        seconds = self.stop_time - self.start_time
+        return 'Successfully graded your submission in {:.3f} seconds.'.format(seconds)
+
+
     def grade(self):
         if self.submission_content == None:
             return
@@ -72,7 +63,7 @@ class isoenergyGrader(CommonGrader):
         child_pid = os.fork()
 
         if child_pid != 0:
-            setproctitle('isoenergy grader')
+            setproctitle('crowdAI grader')
             os.close(w)
             msg_pipe = os.fdopen(r)
             self.start_time = time()
@@ -92,7 +83,7 @@ class isoenergyGrader(CommonGrader):
             os.close(r)
             msg_pipe = os.fdopen(w, 'w')
             self.app.logger.info('Forked child starting to grade submission {}'.format(self.submission_id))
-            setproctitle('isoenergy grader for submission {}'.format(self.submission.id))
+            setproctitle('crowdAI grader for submission {} (isoenergy)'.format(self.submission.id))
             try:
                 b = io.BytesIO(self.submission_content)
                 df_sub = {}
@@ -100,7 +91,7 @@ class isoenergyGrader(CommonGrader):
                     for s in f_sub.keys():
                         df_sub[s] = f_sub[s]['isoE'][:]
                 
-                (self.score,self.score_secondary) = wlDistanceDic(self.df_ans, df_sub)
+                (self.score,self.score_secondary) = calcDistanceDic(self.df_ans, df_sub)
                 self.app.logger.info('Successfully graded {}'.format(self.submission_id))
                 self.grading_success = True
             
@@ -118,6 +109,7 @@ class isoenergyGrader(CommonGrader):
                 msg_pipe.close()
                 sys.exit()
 
+
 if __name__=="__main__":
     import argparse
     psr = argparse.ArgumentParser()
@@ -126,6 +118,7 @@ if __name__=="__main__":
     args =psr.parse_args()
     df_ansDic={}
     df_subDic={}
+    
     with h5py.File(args.ref) as ref, h5py.File(args.ipt) as ipt:
         df_ans = ref['/']
         df_sub = ipt['/']
@@ -134,5 +127,6 @@ if __name__=="__main__":
             df_ansDic[s] = df_ans[s]['isoE'][:]
         for s in df_sub.keys():
             df_subDic[s] = df_sub[s]['isoE'][:]
-        print("W Dist:{}, L2 Dist: {}".format(*wlDistance(df_ans, df_sub)))
-    print("L2 Dist: {};L1 Dist: {}".format(*wlDistanceDic(df_ansDic, df_subDic)))
+    
+    print("L2 Dist: {};L1 Dist: {}".format(*calcDistanceDic(df_ansDic, df_subDic)))
+

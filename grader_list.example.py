@@ -6,7 +6,7 @@ CROWDAI_API_GRADERS = [
         'name': 'Random Grader',
         'id': 'random_grader',
         'api_key': 'your_api_key',
-        'class': RandomPointsGrader
+        'class': RandomPointsGrader,
         'answer_file': 'path/to/your/answer', # can be None
         'enable_perf': True # generate perf file under perf/, will slow it down!
     }
