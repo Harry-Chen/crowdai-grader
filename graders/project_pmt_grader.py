@@ -52,10 +52,10 @@ def wpdistance(df_ans, df_sub):
     return dists/gl, pois/gl
 
 
-class WDistanceGrader(CommonGrader):
+class PMTGrader(CommonGrader):
 
     def __init__(self, *kargs):
-        super(WDistanceGrader, self).__init__(*kargs)
+        super(PMTGrader, self).__init__(*kargs)
         file_path = self.answer_file_path
         if files.__contains__(file_path):
             self.df_ans = files[file_path]
