@@ -22,7 +22,7 @@ def CalculateSin(vec1, vec2):
     '''
     Kvec1 = S2K( vec1)
     Kvec2 = S2K( vec2)
-    Cos_of_them = ( np.sqrt( np.dot( Kvec1, Kvec2))
+    Cos_of_them = ( np.sqrt( np.abs( np.dot( Kvec1, Kvec2)))
             / np.linalg.norm( Kvec1)
             / np.linalg.norm( Kvec2))
     if np.abs(Cos_of_them) > 1:
