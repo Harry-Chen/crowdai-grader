@@ -44,8 +44,11 @@ def wpdistance(df_ans, df_sub):
 
         # scores
         wl = df_sub[j0:j]['Weight']
-        dists += scipy.stats.wasserstein_distance(df_ans[i0:i]['PETime'],
-                                                  df_sub[j0:j]['PETime'], v_weights=wl)
+        try:
+            dists += scipy.stats.wasserstein_distance(df_ans[i0:i]['PETime'],
+                                                      df_sub[j0:j]['PETime'], v_weights=wl)
+        except ValueError as e:
+            raise ValueError("Event {} Channel {} error: {}".format(eid//30, eid % 30, str(e))) from None
         Q = i-i0; q = np.sum(wl)
         pois += np.abs(Q - q) * scipy.stats.poisson.pmf(Q, Q)
 
