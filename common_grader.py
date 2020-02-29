@@ -81,18 +81,21 @@ class CommonGrader(object):
             message = json.loads(msg_pipe.read())
             self.app.logger.info('Got message from child: {}'.format(message))
             self.stop_time = time()
+            
+            os.waitpid(child_pid, 0)  # wait for child to finish
+            msg_pipe.close()
+            self.app.logger.info('Child process for submission {} exits'.format(self.submission_id))
 
             self.grading_success = message['grading_success']
             if not self.grading_success:
                 self.grading_message = message['grading_message']
             else:
                 self.score = float(message['score'])
-                self.score_secondary = float(message['score_secondary'])
+                self.score_secondary = float(message['score_secondary']) if message['score_secondary'] is not None else None
 
-            os.waitpid(child_pid, 0)  # wait for child to finish
-            msg_pipe.close()
-            self.app.logger.info('Child process for submission {} exits'.format(self.submission_id))
-            setproctitle(proc_title_old) # restore old title
+            setproctitle(proc_title_old) # recover old proc title
+            return
+
         else:
             # child process
             os.close(r)
@@ -119,7 +122,7 @@ class CommonGrader(object):
                 self.app.logger.info('Forked child done grading submission {}'.format(self.submission_id))
                 msg_pipe.write(json.dumps(
                     {'grading_success': self.grading_success, 'grading_message': str(self.grading_message),
-                     'score': str(self.score), 'score_secondary': str(self.score_secondary)}))
+                     'score': str(self.score), 'score_secondary': str(self.score_secondary) if self.score_secondary is not None else None}))
                 msg_pipe.close()
                 sys.exit()
 
