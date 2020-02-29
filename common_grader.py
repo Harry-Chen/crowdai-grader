@@ -69,9 +69,11 @@ class CommonGrader(object):
         r, w = os.pipe()
         child_pid = os.fork()
 
+        proc_title = 'crowdAI grader for submission {}'.format(self.submission_id)
+
         if child_pid != 0:
             # parent process
-            setproctitle('crowdAI grader')
+            setproctitle(proc_title + ' (controller)')
             os.close(w)
             msg_pipe = os.fdopen(r)
             self.start_time = time()
@@ -94,7 +96,7 @@ class CommonGrader(object):
             os.close(r)
             msg_pipe = os.fdopen(w, 'w')
             self.app.logger.info('Forked child starting to grade submission {}'.format(self.submission_id))
-            setproctitle('crowdAI grader for submission {}'.format(self.submission_id))
+            setproctitle(proc_title + ' (worker)')
             try:
                 self.score, self.score_secondary = self.do_grade()
                 self.app.logger.info('Successfully graded {}'.format(self.submission_id))

@@ -10,6 +10,8 @@ from logging.handlers import RotatingFileHandler
 import sys
 import yappi
 
+from setproctitle import setproctitle
+
 app = Flask(__name__)
 handler = logging.StreamHandler(sys.stderr)
 handler.setLevel(logging.INFO)
@@ -60,4 +62,6 @@ def do_grade(g, file_key, submission_id, app):
 
 if __name__ == '__main__':
     app.run(port=FLASK_PORT)
+    setproctitle('CrowdAI grader [on port {}]'.format(FLASK_PORT))
+
 
