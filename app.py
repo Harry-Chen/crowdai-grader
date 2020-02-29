@@ -61,7 +61,7 @@ def do_grade(g, file_key, submission_id, app):
 
 
 if __name__ == '__main__':
-    app.run(port=FLASK_PORT)
     setproctitle('CrowdAI grader [on port {}]'.format(FLASK_PORT))
+    app.run(port=FLASK_PORT)
 
 

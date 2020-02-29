@@ -69,6 +69,7 @@ class CommonGrader(object):
         r, w = os.pipe()
         child_pid = os.fork()
 
+        proc_title_old = getproctitle()
         proc_title = 'crowdAI grader for submission {}'.format(self.submission_id)
 
         if child_pid != 0:
@@ -91,6 +92,7 @@ class CommonGrader(object):
             os.waitpid(child_pid, 0)  # wait for child to finish
             msg_pipe.close()
             self.app.logger.info('Child process for submission {} exits'.format(self.submission_id))
+            setproctitle(proc_title_old) # restore old title
         else:
             # child process
             os.close(r)
