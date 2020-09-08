@@ -25,7 +25,7 @@ def calcAccuracy(df_ans, df_sub):
     # compare value
     compres = df_subT[df_subT == df_ansT]
 
-    return np.sum([len(compres[compres == i]) * prescore[i - 1] for i in range(1, 6)])
+    return np.sum([len(compres[compres == i]) * prescore[i - 1] for i in range(1, 6)]), None
 
 
 
@@ -55,7 +55,7 @@ class CepheidsGrader(CommonGrader):
             answer_fields = f_sub['ans'].dtype.fields
             self.check_column('ID', answer_fields)
             self.check_column('Type', answer_fields)
-            return wpdistance(self.df_ans, f_sub['ans'][()])
+            return calcAccuracy(self.df_ans, f_sub['ans'][()])
 
 
 if __name__ == "__main__":
