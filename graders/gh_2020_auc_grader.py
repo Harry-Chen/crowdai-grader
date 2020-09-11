@@ -25,7 +25,10 @@ class GhostHunter2020AUCGrader(CommonGrader):
             self.df_ans = files[file_path]
         else:
             with h5py.File(file_path) as f_ans:
-                self.df_ans = f_ans['ParticleTruth'][()]
+                if 'ParticleTruth' in f_ans:
+                    self.df_ans = f_ans['ParticleTruth'][()]
+                elif 'Answer' in f_ans:
+                    self.df_ans = f_ans['Answer'][()]
             files[file_path] = self.df_ans
         print(type(self.df_ans))
 
@@ -53,6 +56,9 @@ if __name__ == "__main__":
     args = psr.parse_args()
     
     with h5py.File(args.ref) as ref, h5py.File(args.ipt) as ipt:
-        df_ans = ref["ParticleTruth"][()]
+        if 'ParticleTruth' in ref:
+            df_ans = ref["ParticleTruth"][()]
+        elif 'Answer' in ref:
+            df_ans = ref["Answer"][()]
         df_sub = ipt["Answer"][()]
     print("AUC Score: {}".format(calcAUCScore(df_ans, df_sub)))
