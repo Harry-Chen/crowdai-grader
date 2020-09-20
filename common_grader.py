@@ -104,6 +104,7 @@ class CommonGrader(object):
             setproctitle(proc_title + ' (worker)')
             try:
                 self.score, self.score_secondary = self.do_grade()
+                assert abs(self.score) != float('inf') and self.score != float('nan'), 'Score evaluates to abnormal value {}'.format(self.score)
                 self.app.logger.info('Successfully graded {}'.format(self.submission_id))
                 self.grading_success = True
 

@@ -12,7 +12,7 @@ def calcDistanceDic(df_ans, df_sub):
     # L2Dist = 0
 
     length = len(df_ans.keys())
-    assert len(df_sub.keys()) == length, 'The number of answer is wrong'
+    assert len(df_sub.keys()) == length, 'Expected {} keys in answer file, found {} keys'.format(length, len(df_sub.keys()))
 
     L1DistStore = np.zeros(length)
     L2DistStore = np.zeros(length)
@@ -22,6 +22,7 @@ def calcDistanceDic(df_ans, df_sub):
         assert (s in df_sub.keys()), 'Answer must include INDEX {}'.format(s)
         e_sub = df_sub[s][:]
         assert (e_sub.shape == (201, 201)), 'INDEX {} shape must be (201,201)'.format(s)
+        assert np.all(e_sub >= 0) and np.all(e_sub <= 255), 'Data in INDEX {} must be in range [0, 255]'.format(s)
         L1DistStore[i] = np.sum(np.abs(e_ans - e_sub))
         L2DistStore[i] = np.linalg.norm(e_ans - e_sub)
 
