@@ -16,7 +16,8 @@ def calc_score(truth, ans):
     truth_vis = truth["vis"]
     ans_vis = ans["vis"]
 
-    return np.std((ans_vis - truth_vis) / np.sqrt(truth_vis))
+    temp = (ans_vis - truth_vis) / np.sqrt(truth_vis)
+    return np.sqrt(np.mean(temp ** 2))
 
 class GhostHunter2021STDGrader(CommonGrader):
 
