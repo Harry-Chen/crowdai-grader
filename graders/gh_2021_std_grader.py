@@ -13,10 +13,10 @@ def calc_score(truth, ans):
     if not np.all(truth["EventID"] == ans["EventID"]):
         raise ValueError("Answer table should include all the event IDs.")
 
-    truth_vis = truth["vis"]
-    ans_vis = ans["vis"]
+    truth_p = truth["p"][:2000]
+    ans_p = ans["p"][:2000]
 
-    temp = (ans_vis - truth_vis) / np.sqrt(truth_vis)
+    temp = (ans_p - truth_p) / np.sqrt(truth_p)
     return np.sqrt(np.mean(temp ** 2))
 
 class GhostHunter2021STDGrader(CommonGrader):
@@ -48,7 +48,7 @@ class GhostHunter2021STDGrader(CommonGrader):
                 raise ValueError('Bad submission: no Answer table found')
             answer_fields = f_sub['Answer'].dtype.fields
             self.check_column('EventID', answer_fields)
-            self.check_column('vis', answer_fields)
+            self.check_column('p', answer_fields)
 
             return calc_score(self.df_ans, f_sub['Answer'][()]), None
 
