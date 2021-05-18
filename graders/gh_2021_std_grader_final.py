@@ -13,8 +13,8 @@ def calc_score(truth, ans):
     if not np.all(truth["EventID"] == ans["EventID"]):
         raise ValueError("Answer table should include all the event IDs.")
 
-    truth_p = truth["p"][:2000]
-    ans_p = ans["p"][:2000]
+    truth_p = truth["p"][2000:]
+    ans_p = ans["p"][2000:]
 
     temp = (ans_p - truth_p) / np.sqrt(truth_p)
     return np.sqrt(np.mean(temp ** 2))
