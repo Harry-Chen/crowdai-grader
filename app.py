@@ -42,7 +42,7 @@ def enqueue_grading_job() -> str:
 
 
 def do_grade(g, file_key, submission_id, app):
-    grader = g['class'](g['api_key'], g['answer_file'], file_key, submission_id, app)
+    grader = g['class'](g['api_key'], g['answer_file'], g.get('precision', 3), file_key, submission_id, app)
     grader.fetch_submission()
     
     if g['enable_perf']:

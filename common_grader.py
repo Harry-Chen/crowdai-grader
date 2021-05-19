@@ -25,6 +25,7 @@ class CommonGrader(object):
     app: Flask = None
     score: float = None
     score_secondary: float = None
+    precision: int = None
     submission_content: bytes = None
     grading_message: str = None
     grading_success: bool = False
@@ -32,7 +33,7 @@ class CommonGrader(object):
     start_time: float = None
     stop_time: float = None
 
-    def __init__(self, api_key, answer_file_path, file_key, submission_id, app):
+    def __init__(self, api_key, answer_file_path, precision, file_key, submission_id, app):
         self.app = app
         self.app.logger.info('Initializing new {} with api_key {}, file_key {}, submission_id {}'
                               .format(__name__, api_key, file_key, submission_id))
@@ -40,6 +41,7 @@ class CommonGrader(object):
         self.file_key = file_key
         self.submission_id = submission_id
         self.answer_file_path = answer_file_path
+        self.precision = precision
 
     def fetch_submission(self):
         try:
@@ -139,10 +141,11 @@ class CommonGrader(object):
             data = {
                 'grading_status': 'graded',
                 'grading_message': self.generate_success_message(),
-                'score': '{:.3f}'.format(self.score)
+                'score': '{0:.{1}f}'.format(self.score, self.precision)
             }
+            self.app.logger.info(data)
             if self.score_secondary is not None:
-                data['score_secondary'] = '{:.3f}'.format(self.score_secondary)
+                data['score_secondary'] = '{0:.{1}f}'.format(self.score_secondary, self.precision)
 
         else:
             self.app.logger.info('{}: Submitting with failure message: {}'
