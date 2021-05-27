@@ -142,11 +142,11 @@ class CommonGrader(object):
             data = {
                 'grading_status': 'graded',
                 'grading_message': self.generate_success_message(),
-                'score': '{0:.{1}f}'.format(self.score, self.precision)
+                'score': '{:.5f}'.format(self.score)
             }
             self.app.logger.info(data)
             if self.score_secondary is not None:
-                data['score_secondary'] = '{0:.{1}f}'.format(self.score_secondary, self.precision)
+                data['score_secondary'] = '{:.5f}'.format(self.score_secondary)
 
         else:
             self.app.logger.info('{}: Submitting with failure message: {}'
