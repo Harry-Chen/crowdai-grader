@@ -22,7 +22,7 @@ def angleScore(df_ans, df_sub):
                         np.cos(-df_ans[:, 1]+np.pi/2)
     vecproduct[vecproduct > 1] = 1
     vecproduct[vecproduct < -1] = -1
-    # vecproduct is (2000, ) , so result is [0, 2000]
+    # vecproduct is (1000, ) , so result is [0, 1000]
     return np.sum(np.arccos(vecproduct)) / np.pi
 
 
