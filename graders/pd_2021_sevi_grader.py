@@ -33,7 +33,7 @@ def calc_score(truth, ans):
     # calculate L2 distance considering legendre normalization factor
     distance_squre_double = (truth_beta - ans_beta) ** 2 @ (1 / (4 * np.arange(1, len(truth_beta) + 1) + 1))
 
-    return np.sqrt(distance_squre_double * 2)
+    return np.sqrt(distance_squre_double * 2), ans["R"][0] - truth["R"][0]
 
 
 class GhostHunter2021STDGrader(CommonGrader):
