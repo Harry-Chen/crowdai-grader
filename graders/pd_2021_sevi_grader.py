@@ -36,10 +36,10 @@ def calc_score(truth, ans):
     return np.sqrt(distance_squre_double * 2), ans["R"][0] - truth["R"][0]
 
 
-class GhostHunter2021STDGrader(CommonGrader):
+class SEVIGrader(CommonGrader):
 
     def __init__(self, *kargs):
-        super(GhostHunter2021STDGrader, self).__init__(*kargs)
+        super(SEVIGrader, self).__init__(*kargs)
         file_path = self.answer_file_path
         print("BEFORE")
         if files.__contains__(file_path):
