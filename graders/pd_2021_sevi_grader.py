@@ -41,13 +41,11 @@ class SEVIGrader(CommonGrader):
     def __init__(self, *kargs):
         super(SEVIGrader, self).__init__(*kargs)
         file_path = self.answer_file_path
-        print("BEFORE")
         if files.__contains__(file_path):
             self.df_ans = files[file_path]
         else:
             with h5.File(file_path) as f_ans:
-                if 'Answer' in f_ans:
-                    self.df_ans = f_ans['Answer'][()]
+                self.df_ans = f_ans['Truth'][()]
             files[file_path] = self.df_ans
         print(type(self.df_ans))
 
@@ -62,11 +60,11 @@ class SEVIGrader(CommonGrader):
             if "Answer" not in f_sub:
                 raise ValueError('Bad submission: no Answer table found')
             answer_fields = f_sub['Answer'].dtype.fields
-            self.check_column('ShpereId', answer_fields)
+            self.check_column('SphereId', answer_fields)
             self.check_column('R', answer_fields)
             self.check_column('beta', answer_fields)
 
-            return calc_score(self.df_ans, f_sub['Answer'][()]), None
+            return calc_score(self.df_ans, f_sub['Answer'][()])
 
 
 if __name__ == "__main__":
