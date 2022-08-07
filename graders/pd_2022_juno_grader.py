@@ -26,7 +26,7 @@ def calc_score(truth, ans):
     ans_p = ans["p"]
 
     score = calc_score_impl(truth_p, ans_p)
-    gun_mask = truth_p["Gun"] == 1
+    gun_mask = truth["Gun"] == 1
     sec_score = calc_score_impl(truth_p[gun_mask], ans_p[gun_mask])
     return score, sec_score
 
