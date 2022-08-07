@@ -31,9 +31,9 @@ def calc_score(truth, ans):
     return score, sec_score
 
 
-class GhostHunter2022JUNOGrader(CommonGrader):
+class PhysicsData2022JUNOGrader(CommonGrader):
     def __init__(self, *kargs):
-        super(GhostHunter2022JUNOGrader, self).__init__(*kargs)
+        super(PhysicsData2022JUNOGrader, self).__init__(*kargs)
         file_path = self.answer_file_path
         print("BEFORE")
         if files.__contains__(file_path):
