@@ -7,12 +7,24 @@ import h5py as h5
 files = {}
 
 
-def calc_score_impl(truth_p, ans_p):
-    truth_e = np.sqrt(truth_p**2 + 0.511**2)
-    ans_e = np.sqrt(ans_p**2 + 0.511**2)
+def p2e(p):
+    return np.sqrt(p**2 + 0.511**2)
 
+
+def calc_score_impl(truth_e, ans_e):
     temp = (ans_e - truth_e) / np.sqrt(truth_e)
     return np.sqrt(np.mean(temp**2))
+
+
+def calc_juno_impl(truth_e, ans_e):
+    sim_e = np.round(truth_e - 0.511)
+    ans_std = np.zeros_like(ans_e)
+    for re in np.unique(sim_e):
+        mask = sim_e == re
+        ans_std[mask] = np.std(ans_e[mask])
+    # std**2 == c**2 + a**2 * e + b**2 * e**2
+    fit = np.polyfit(ans_e, ans_std**2, 2)
+    return np.poly1d(fit)(1.6**2)
 
 
 def calc_score(truth, ans):
@@ -25,9 +37,12 @@ def calc_score(truth, ans):
     truth_p = truth["p"]
     ans_p = ans["p"]
 
-    score = calc_score_impl(truth_p, ans_p)
+    truth_e = p2e(truth_p)
+    ans_e = p2e(ans_p)
+
+    score = calc_score_impl(truth_e, ans_e)
     gun_mask = truth["Gun"] == 1
-    sec_score = calc_score_impl(truth_p[gun_mask], ans_p[gun_mask])
+    sec_score = calc_juno_impl(truth_e[gun_mask], ans_e[gun_mask])
     return score, sec_score
 
 
