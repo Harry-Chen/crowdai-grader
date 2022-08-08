@@ -24,7 +24,7 @@ def calc_juno_impl(truth_e, ans_e):
         ans_std[mask] = np.std(ans_e[mask])
     # std**2 == c**2 + a**2 * e + b**2 * e**2
     fit = np.polyfit(ans_e, ans_std**2, 2)
-    return np.poly1d(fit)(1.6**2)
+    return np.sqrt(np.poly1d(fit)(1.6**2) / (1.6**2))
 
 
 def calc_score(truth, ans):
@@ -94,4 +94,4 @@ if __name__ == "__main__":
         answer = ipt["Answer"][()]
     score, secondary_score = calc_score(truth, answer)
     print("Score: {}".format(score))
-    print("Secondary score: {}".format(score))
+    print("Secondary score: {}".format(secondary_score))
