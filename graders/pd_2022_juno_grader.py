@@ -18,6 +18,7 @@ def calc_score_impl(truth_e, ans_e):
 
 def calc_juno_impl(truth_e, ans_e):
     sim_e = np.round(truth_e - 0.511)
+    ans_e = ans_e - 0.511
     ans_std = np.zeros_like(ans_e)
     for re in np.unique(sim_e):
         mask = sim_e == re
