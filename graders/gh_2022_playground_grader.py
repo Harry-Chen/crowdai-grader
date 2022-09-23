@@ -14,7 +14,11 @@ def calc_score(truth, ans):
     if not np.all(truth["EventID"] == ans["EventID"]):
         raise ValueError("Answer table should include all the event IDs.")
 
-    return 1.0
+    truth_vis = truth["E"]
+    ans_vis = ans["E"]
+
+    temp = (ans_vis - truth_vis) / np.sqrt(truth_vis)
+    return np.sqrt(np.mean(temp**2))
 
 
 class GhostHunter2022PlayGrader(CommonGrader):
