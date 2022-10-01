@@ -15,14 +15,15 @@ def calc_score_impl(truth_e, ans_e):
 
 def calc_juno_impl(truth_e, ans_e):
     def likelihood(args):
-        sigma2 = ans_e * args[0] ** 2 + ans_e**2 * args[1] ** 2 + args[2]
-        return -np.sum(np.log(sigma2) / 2 + (ans_e - truth_e) ** 2 / (2 * sigma2))
+        sigma2 = ans_e * args[0] ** 2 + (ans_e**2) * (args[1] ** 2) + args[2] ** 2
+        logp = np.sum(np.log(sigma2) / 2 + (ans_e - truth_e) ** 2 / (2 * sigma2))
+        return logp
 
-    args = opt.minimize(likelihood, x0=[0.02, 0.007, 0.01])
+    args = opt.minimize(likelihood, x0=[1, 1, 1])
     if not args.success:
-        raise RuntimeError("Cannot get args")
+        raise RuntimeError(f"Cannot get args: {args.message}")
     args = args.x
-    return np.sqrt(args[0] ** 2 + (1.6 * args[1]) ** 2 + (args[2] / 1.6) ** 2)
+    return np.sqrt(args[0] ** 2 + (1.6 * args[1]) ** 2 + (args[2] / 1.6) ** 2) * 1000
 
 
 def calc_score(truth, ans):
@@ -67,7 +68,8 @@ class GhostHunter2022STDGrader(CommonGrader):
                 raise ValueError("Bad submission: no Answer table found")
             answer_fields = f_sub["Answer"].dtype.fields
             self.check_column("EventID", answer_fields)
-            self.check_column("p", answer_fields)
+            self.check_column("Ek", answer_fields)
+            self.check_column("Evis", answer_fields)
 
             return calc_score(self.df_ans, f_sub["Answer"][()])
 
