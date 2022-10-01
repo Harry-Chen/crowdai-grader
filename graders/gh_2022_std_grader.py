@@ -1,6 +1,7 @@
 from common_grader import CommonGrader
 
 import io
+import warnings
 import numpy as np
 import h5py as h5
 import scipy.optimize as opt
@@ -21,7 +22,7 @@ def calc_juno_impl(truth_e, ans_e):
 
     args = opt.minimize(likelihood, x0=[1, 1, 1])
     if not args.success:
-        raise RuntimeError(f"Cannot get args: {args.message}")
+        warnings.warn(args.message, RuntimeWarning)
     args = args.x
     return np.sqrt(args[0] ** 2 + (1.6 * args[1]) ** 2 + (args[2] / 1.6) ** 2) * 1000
 
