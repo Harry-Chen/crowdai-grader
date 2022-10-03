@@ -20,7 +20,7 @@ def calc_juno_impl(truth_e, ans_e):
         logp = np.sum(np.log(sigma2) / 2 + (ans_e - truth_e) ** 2 / (2 * sigma2))
         return logp
 
-    args = opt.minimize(likelihood, x0=[1, 1, 1])
+    args = opt.minimize(likelihood, x0=[1, 1, 1], method="Powell")
     if not args.success:
         warnings.warn(args.message, RuntimeWarning)
     args = args.x
